@@ -66,6 +66,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .swatches{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}.sw{width:46px;height:46px;min-height:0;padding:0;border-radius:12px;font-size:.78rem}.sw.sel{outline:3px solid var(--acc);outline-offset:2px}
 details{background:var(--card);border-radius:12px;padding:10px 14px}.empty{background:var(--card);border-radius:12px}
 .orow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}
+.imgs .x.ed{right:auto;left:-6px}
+#dCrop{width:min(580px,96vw)}#cropAr button{min-height:36px;padding:4px 12px}#cropAr button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .empty{text-align:center;color:var(--sub);padding:40px 10px}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:99px;padding:12px 22px}
 dialog{border:none;border-radius:16px;padding:18px;width:min(580px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
@@ -115,13 +117,25 @@ textarea{min-height:70px}
   <label style="margin-top:10px">名稱（想叫什麼都可以）</label><input id="cfgTitle" maxlength="30">
   <label style="margin-top:14px">名稱旁的照片</label><div class="imgs" id="cfgAv"></div>
   <label style="margin-top:14px">背景顏色／花色</label><div class="swatches" id="cfgBg"></div>
-  <div class="bar" style="margin-top:8px"><label class="filebtn">用自己的圖片當背景<input type="file" accept="image/*" id="cfgBgIn" style="display:none"></label><label class="filebtn">自選顏色<input type="color" id="cfgColor" style="margin-left:8px;width:34px;height:28px;min-height:0;padding:0;border:none;background:none"></label></div>
+  <div class="bar" style="margin-top:8px"><label class="filebtn">用自己的圖片當背景<input type="file" accept="image/*" id="cfgBgIn" style="display:none"></label><button id="cfgBgEd" style="display:none">✂ 調整背景範圍</button><label class="filebtn">自選顏色<input type="color" id="cfgColor" style="margin-left:8px;width:34px;height:28px;min-height:0;padding:0;border:none;background:none"></label></div>
   <button class="del" id="cfgReset" style="margin-top:4px">恢復預設</button>
 </div>
 <div class="stat" style="margin-top:12px">
   <b style="font-size:1rem">💱 匯率</b>
   <p class="meta">各幣別換算成台幣的預設匯率，新增衣服時會自動帶入。</p>
   <button id="bRate">匯率設定</button>
+</div>
+<div class="stat" style="margin-top:12px">
+  <b style="font-size:1rem">🏷 分類選單</b>
+  <p class="meta">新增衣服時「分類」的下拉選項，例如：包屁、褲子、洋裝。</p>
+  <div id="catList"></div>
+  <div class="bar" style="margin-top:8px"><input id="catNew" placeholder="新增分類，例：包屁" style="flex:1"><button id="catNewBtn" class="p">新增</button></div>
+</div>
+<div class="stat" style="margin-top:12px">
+  <b style="font-size:1rem">🏷 常用品牌</b>
+  <p class="meta">先加進來的品牌，新增衣服時會直接出現在品牌欄位下面，點一下就能填入。</p>
+  <div id="brandListUI"></div>
+  <div class="bar" style="margin-top:8px"><input id="brandNew" placeholder="新增品牌，例：RR" style="flex:1"><button id="brandNewBtn" class="p">新增</button></div>
 </div>
 <div class="stat" style="margin-top:12px">
   <b style="font-size:1rem">📦 集運運費</b>
@@ -154,7 +168,7 @@ textarea{min-height:70px}
     <div><label>買自哪裡</label><input id="f_bw" placeholder="Mercari、eBay、FB 社團…"><div class="chips" data-chip="bw"></div></div>
     <div><label>購買目的</label><select id="f_purpose"><option value="wear">自己（女兒）穿</option><option value="resale">純粹買來賣</option></select></div>
     <div><label>穿過嗎</label><select id="f_worn"><option value="no">沒穿過</option><option value="yes">穿過</option></select></div>
-    <div><label>所屬衣櫃</label><select id="f_cat"></select></div>
+    <div class="full"><label>分類（包屁、褲子、洋裝…，選單可在設定裡改）</label><select id="f_cat"></select><div class="chips" data-chip="cat"></div></div>
     <div><label>重量（算國際運費用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
     <div class="full sec">購買資料</div>
     <div><label>幣別</label><select id="f_cur"></select></div>
@@ -217,6 +231,14 @@ textarea{min-height:70px}
   <div id="ordl"></div><button id="ordAdd">＋ 新增訂單</button>
   <div class="acts"><button class="p" id="ordOk">完成</button></div>
 </dialog>
+<dialog id="dCrop">
+  <div class="sec" style="margin-bottom:8px">調整照片範圍</div>
+  <canvas id="cropCv" style="display:block;margin:0 auto;border-radius:10px;touch-action:none"></canvas>
+  <div class="meta" style="margin:6px 0">拖曳白框移動，拖四個角調整大小</div>
+  <div class="bar" id="cropAr"><button data-ar="0">自由</button><button data-ar="1">1:1</button><button data-ar="1.3333">4:3</button><button data-ar="0.75">3:4</button><button data-ar="1.7778">16:9</button></div>
+  <div class="bar"><button id="cropRot">↻ 旋轉</button><button id="cropFull">整張（不裁切）</button></div>
+  <div class="acts"><button id="cropNo">取消</button><button class="p" id="cropOk">完成</button></div>
+</dialog>
 <dialog id="dAsk"><div id="askMsg" style="margin-bottom:10px;white-space:pre-wrap"></div><input id="askIn"><div class="acts"><button id="askNo">取消</button><button class="p" id="askOk">確定</button></div></dialog>
 <dialog id="dRep">
   <div class="sec" style="margin-bottom:8px">買賣與花費報表</div>
@@ -237,7 +259,7 @@ const dbp=new Promise(r=>{try{const q=indexedDB.open('closet',1);q.onupgradeneed
 async function kvSet(k,v){const d=await dbp;if(!d)return;return new Promise(r=>{try{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
 async function kvDel(k){const d=await dbp;if(!d)return;try{d.transaction('kv','readwrite').objectStore('kv').delete(k)}catch(e){}}
 async function kvAll(){const d=await dbp;if(!d)return{};return new Promise(r=>{const o={};try{const c=d.transaction('kv').objectStore('kv').openCursor();c.onsuccess=()=>{const x=c.result;if(x){o[x.key]=x.value;x.continue()}else r(o)};c.onerror=()=>r(o)}catch(e){r(o)}})}
-const save=()=>kvSet('data',{items,ships,orders,rates,cats,hid,cfg});
+const save=()=>kvSet('data',{items,ships,orders,rates,cats,hid,cfg,brandList});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const n=v=>Number(v)||0;
 const money=v=>'NT$'+Math.round(v).toLocaleString('zh-TW');
@@ -322,11 +344,11 @@ function render(){bkStatus();
 function shrink(file,max,q){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',q))};im.onerror=()=>res(null);im.src=fr.result};fr.onerror=()=>res(null);fr.readAsDataURL(file)})}
 function drawImgs(){
   if(aiSample)$('aiRow').style.display=tmp.shots.length?'':'none';
-  const mk=(id,k)=>`<div class="im"><img src="${imgs[id]}" data-big="${id}" alt=""><button class="x" data-rm="${k}:${id}" aria-label="移除">✕</button></div>`;
+  const mk=(id,k)=>`<div class="im"><img src="${imgs[id]}" data-big="${id}" alt=""><button class="x ed" data-ed="${id}" aria-label="編輯">✂</button><button class="x" data-rm="${k}:${id}" aria-label="移除">✕</button></div>`;
   $('phWrap').innerHTML=(tmp.photo?mk(tmp.photo,'p'):'')+(tmp.photo?'':`<label class="up">📷<input type="file" accept="image/*" id="inPh"></label>`);
   $('shWrap').innerHTML=tmp.shots.map(id=>mk(id,'s')).join('')+`<label class="up">＋<input type="file" accept="image/*" multiple id="inSh"></label>`;
-  $('inPh')&&($('inPh').onchange=async e=>{const d=await shrink(e.target.files[0],520,.72);if(d){const id=uid();imgs[id]=d;added.add(id);tmp.photo=id;drawImgs()}});
-  $('inSh').onchange=async e=>{for(const f of e.target.files){const d=await shrink(f,1280,.72);if(d){const id=uid();imgs[id]=d;added.add(id);tmp.shots.push(id)}}drawImgs()};
+  $('inPh')&&($('inPh').onchange=async e=>{const d=await cropFlow(e.target.files[0],{max:520,q:.72,ar:1});if(d){const id=uid();imgs[id]=d;added.add(id);tmp.photo=id;drawImgs()}});
+  $('inSh').onchange=async e=>{for(const f of e.target.files){const d=await cropFlow(f,{max:1280,q:.72,ar:0});if(d){const id=uid();imgs[id]=d;added.add(id);tmp.shots.push(id)}}drawImgs()};
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-big]');if(b){$('bigImg').src=imgs[b.dataset.big];$('big').showModal();return}
@@ -614,7 +636,7 @@ function bkStatus(){
 $('fullBk').onclick=async()=>{
   const b=$('fullBk');b.disabled=true;$('bkMsg').textContent='正在整理備份…';
   const used={};items.forEach(i=>{[i.photo,...(i.shots||[])].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]})});[cfg.avatar,cfg.bgImg].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]});
-  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,orders,rates,cats,hid,cfg,imgs:used});
+  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,orders,rates,cats,hid,cfg,brandList,imgs:used});
   const ok=await saveFile('衣櫥帳本備份_'+todayS()+'.json',new Blob([data],{type:'application/json'}),'bkMsg');
   if(ok){lastBk=new Date().toISOString();await kvSet('meta',{lastBackup:lastBk});bkStatus();$('bkMsg').textContent='已匯出完整備份（'+(data.length/1048576).toFixed(1)+' MB）。請把檔案存到 iCloud、Google Drive，或傳給自己保存。'}
   b.disabled=false;
@@ -632,6 +654,7 @@ $('fullIn').onchange=async e=>{
       rates={...rates,...(d.rates||{})};
       if(d.hid)for(const k in d.hid)hid[k]=[...new Set([...(hid[k]||[]),...d.hid[k]])];
       if(d.cfg)cfg={...cfg,...d.cfg};
+      if(Array.isArray(d.brandList))d.brandList.forEach(b=>{if(!brandList.includes(b))brandList.push(b)});
       (d.orders||[]).forEach(x=>{const e=orders.find(q=>q.id===x.id);if(e)Object.assign(e,x);else orders.push(x)});
       for(const id in (d.imgs||{})){imgs[id]=d.imgs[id];await kvSet('img:'+id,d.imgs[id])}
     }
@@ -644,7 +667,8 @@ let hid={size:[],brand:[],bw:[],sw:[]};
 function drawChips(){
   document.querySelectorAll('[data-chip]').forEach(box=>{
     const k=box.dataset.chip,cnt={};
-    items.forEach(i=>{const v=(i[k]||'').trim();if(v&&!(hid[k]||[]).includes(v))cnt[v]=(cnt[v]||0)+1});
+    items.forEach(i=>{const v=(i[k]||'').trim();if(v&&!(hid[k]||[]).includes(v)&&(k!=='cat'||cats.includes(v)))cnt[v]=(cnt[v]||0)+1});
+    if(k==='brand')brandList.forEach(v=>{if(v&&!(hid[k]||[]).includes(v)&&!(v in cnt))cnt[v]=0.5});
     box.innerHTML=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,24).map(([v])=>`<span class="chip"><button type="button" data-pick="${k}" data-v="${esc(v)}">${esc(v)}</button><button type="button" class="cx" data-hide="${k}" data-v="${esc(v)}" aria-label="移除 ${esc(v)}">✕</button></span>`).join('');
   });
 }
@@ -677,15 +701,16 @@ function applyTheme(){
   else if(cfg.bgType==='image'&&imgs[cfg.bgImg]){r.setProperty('--bgimg','linear-gradient(var(--veil),var(--veil)),url("'+imgs[cfg.bgImg]+'")');r.setProperty('--bgsize','auto,cover')}
   $('av').innerHTML=cfg.avatar&&imgs[cfg.avatar]?'<img src="'+imgs[cfg.avatar]+'" alt="">':'👗';
 }
-async function putImg(file,max,q,old){const d=await shrink(file,max,q);if(!d)return '';const id=uid();imgs[id]=d;await kvSet('img:'+id,d);if(old){delete imgs[old];await kvDel('img:'+old)}return id}
+async function putImg(file,max,q,old,ar){const d=await cropFlow(file,{max,q,ar:ar||0});if(!d)return '';const id=uid();imgs[id]=d;await kvSet('img:'+id,d);if(old){delete imgs[old];await kvDel('img:'+old)}return id}
 async function setBg(type,val){
   if(type==='image')return;
   if(cfg.bgImg){delete imgs[cfg.bgImg];await kvDel('img:'+cfg.bgImg);cfg.bgImg=''}
   cfg.bgType=type;cfg.bgVal=val;applyTheme();drawCfg();await save();
 }
 function drawCfg(){
-  $('cfgAv').innerHTML=cfg.avatar&&imgs[cfg.avatar]?'<div class="im"><img src="'+imgs[cfg.avatar]+'" alt=""><button class="x" id="avRm" aria-label="移除">✕</button></div>':'<label class="up">📷<input type="file" accept="image/*" id="avIn"></label>';
-  const ai=$('avIn');if(ai)ai.onchange=async e=>{const f=e.target.files[0];if(!f)return;const id=await putImg(f,256,.8,cfg.avatar);if(id){cfg.avatar=id;applyTheme();drawCfg();await save()}};
+  $('cfgAv').innerHTML=cfg.avatar&&imgs[cfg.avatar]?'<div class="im"><img src="'+imgs[cfg.avatar]+'" alt=""><button class="x ed" id="avEd" aria-label="編輯">✂</button><button class="x" id="avRm" aria-label="移除">✕</button></div>':'<label class="up">📷<input type="file" accept="image/*" id="avIn"></label>';
+  const ai=$('avIn');if(ai)ai.onchange=async e=>{const f=e.target.files[0];if(!f)return;const id=await putImg(f,256,.8,cfg.avatar,1);if(id){cfg.avatar=id;applyTheme();drawCfg();await save()}};
+  const ae=$('avEd');if(ae)ae.onclick=async()=>{const d=await cropFlow(imgs[cfg.avatar],{max:256,q:.8,ar:1});if(d){imgs[cfg.avatar]=d;await kvSet('img:'+cfg.avatar,d);applyTheme();drawCfg()}};
   const ar=$('avRm');if(ar)ar.onclick=async()=>{await kvDel('img:'+cfg.avatar);delete imgs[cfg.avatar];cfg.avatar='';applyTheme();drawCfg();await save()};
   const box=$('cfgBg');box.innerHTML='';
   const add=(type,val,label,fn)=>{const b=document.createElement('button');b.type='button';b.className='sw'+(cfg.bgType===type&&cfg.bgVal===val?' sel':'');b.title=label;b.setAttribute('aria-label',label);if(fn)fn(b);b.onclick=()=>setBg(type,val);box.appendChild(b)};
@@ -805,12 +830,109 @@ $('f_link').onchange=()=>{
 };
 ['f_oname','f_ols','f_osplit','f_ow','f_owu','f_osrate','f_ointl'].forEach(k=>{$(k).oninput=calc;$(k).onchange=calc});
 
+/* photo cropper */
+const CROP={};
+async function cropFlow(src,opt){
+  const url=typeof src==='string'?src:await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=()=>r(null);fr.readAsDataURL(src)});
+  if(!url)return null;
+  const im=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=url});
+  if(!im)return null;
+  const k0=Math.min(1,2400/Math.max(im.naturalWidth,im.naturalHeight)),sc=document.createElement('canvas');
+  sc.width=Math.round(im.naturalWidth*k0);sc.height=Math.round(im.naturalHeight*k0);sc.getContext('2d').drawImage(im,0,0,sc.width,sc.height);
+  return new Promise(res=>{Object.assign(CROP,{sc,max:opt.max||1000,q:opt.q||.72,ar:opt.ar||0,res,r:null,drag:null});$('dCrop').showModal();layoutCrop(true)});
+}
+function defRect(){const W=CROP.W,H=CROP.H,ar=CROP.ar;if(!ar)return {x:0,y:0,w:W,h:H};let w=W,h=w/ar;if(h>H){h=H;w=h*ar}return {x:(W-w)/2,y:(H-h)/2,w,h}}
+function layoutCrop(reset){
+  const cv=$('cropCv'),sc=CROP.sc,boxW=Math.min($('dCrop').clientWidth-36,520),boxH=Math.min(innerHeight*0.5,440);
+  const k=Math.min(boxW/sc.width,boxH/sc.height),d=window.devicePixelRatio||1;
+  CROP.k=k;CROP.W=Math.round(sc.width*k);CROP.H=Math.round(sc.height*k);CROP.dpr=d;
+  cv.style.width=CROP.W+'px';cv.style.height=CROP.H+'px';cv.width=Math.round(CROP.W*d);cv.height=Math.round(CROP.H*d);
+  if(reset||!CROP.r)CROP.r=defRect();
+  document.querySelectorAll('#cropAr button').forEach(b=>b.classList.toggle('on',Math.abs(n(b.dataset.ar)-CROP.ar)<.001));
+  drawCrop();
+}
+function drawCrop(){
+  const x=$('cropCv').getContext('2d'),W=CROP.W,H=CROP.H,r=CROP.r;
+  x.setTransform(CROP.dpr,0,0,CROP.dpr,0,0);x.clearRect(0,0,W,H);x.drawImage(CROP.sc,0,0,W,H);
+  x.fillStyle='rgba(0,0,0,.5)';x.fillRect(0,0,W,r.y);x.fillRect(0,r.y+r.h,W,H-r.y-r.h);x.fillRect(0,r.y,r.x,r.h);x.fillRect(r.x+r.w,r.y,W-r.x-r.w,r.h);
+  x.strokeStyle='#fff';x.lineWidth=2;x.strokeRect(r.x,r.y,r.w,r.h);
+  x.lineWidth=1;x.globalAlpha=.45;x.beginPath();for(let i=1;i<3;i++){x.moveTo(r.x+r.w*i/3,r.y);x.lineTo(r.x+r.w*i/3,r.y+r.h);x.moveTo(r.x,r.y+r.h*i/3);x.lineTo(r.x+r.w,r.y+r.h*i/3)}x.stroke();x.globalAlpha=1;
+  x.fillStyle='#fff';[[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]].forEach(([a,b])=>x.fillRect(a-7,b-7,14,14));
+}
+(function(){
+  const cv=$('cropCv');
+  cv.onpointerdown=e=>{
+    const b=cv.getBoundingClientRect(),px=e.clientX-b.left,py=e.clientY-b.top,r=CROP.r;if(!r)return;
+    const hit=[[r.x,r.y,'tl'],[r.x+r.w,r.y,'tr'],[r.x,r.y+r.h,'bl'],[r.x+r.w,r.y+r.h,'br']].find(([a,c])=>Math.hypot(px-a,py-c)<28);
+    if(hit)CROP.drag={m:'rs',c:hit[2]};
+    else if(px>r.x&&px<r.x+r.w&&py>r.y&&py<r.y+r.h)CROP.drag={m:'mv',dx:px-r.x,dy:py-r.y};
+    else return;
+    try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();
+  };
+  cv.onpointermove=e=>{
+    const d=CROP.drag;if(!d)return;
+    const b=cv.getBoundingClientRect(),W=CROP.W,H=CROP.H,r=CROP.r,px=Math.max(0,Math.min(W,e.clientX-b.left)),py=Math.max(0,Math.min(H,e.clientY-b.top)),min=40;
+    if(d.m==='mv'){r.x=Math.max(0,Math.min(W-r.w,px-d.dx));r.y=Math.max(0,Math.min(H-r.h,py-d.dy))}
+    else{
+      const ax=d.c.includes('l')?r.x+r.w:r.x,ay=d.c.includes('t')?r.y+r.h:r.y,sx=px<ax?-1:1,sy=py<ay?-1:1;
+      let w=Math.abs(px-ax),h=Math.abs(py-ay);
+      if(CROP.ar){if(h<1)h=1;if(w/h>CROP.ar)w=h*CROP.ar;else h=w/CROP.ar;const f=Math.min(1,(sx<0?ax:W-ax)/Math.max(w,1),(sy<0?ay:H-ay)/Math.max(h,1));w*=f;h*=f}
+      if(w<min){w=min;if(CROP.ar)h=w/CROP.ar}if(!CROP.ar&&h<min)h=min;
+      r.x=Math.max(0,Math.min(W-w,sx<0?ax-w:ax));r.y=Math.max(0,Math.min(H-h,sy<0?ay-h:ay));r.w=Math.min(w,W);r.h=Math.min(h,H);
+    }
+    drawCrop();
+  };
+  cv.onpointerup=cv.onpointercancel=()=>{CROP.drag=null};
+})();
+$('cropAr').onclick=e=>{const b=e.target.closest('button');if(b){CROP.ar=n(b.dataset.ar);CROP.r=defRect();layoutCrop(false)}};
+$('cropRot').onclick=()=>{const s0=CROP.sc,c=document.createElement('canvas');c.width=s0.height;c.height=s0.width;const x=c.getContext('2d');x.translate(c.width,0);x.rotate(Math.PI/2);x.drawImage(s0,0,0);CROP.sc=c;CROP.r=null;layoutCrop(true)};
+$('cropFull').onclick=()=>{CROP.ar=0;CROP.r=defRect();layoutCrop(false)};
+function finishCrop(ok){
+  const res=CROP.res;CROP.res=null;CROP.drag=null;let out=null;
+  if(ok&&CROP.r){const k=CROP.k,r=CROP.r,sx=r.x/k,sy=r.y/k,sw=r.w/k,sh=r.h/k,f=Math.min(1,CROP.max/Math.max(sw,sh)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(sw*f));c.height=Math.max(1,Math.round(sh*f));c.getContext('2d').drawImage(CROP.sc,sx,sy,sw,sh,0,0,c.width,c.height);out=c.toDataURL('image/jpeg',CROP.q)}
+  if($('dCrop').open)$('dCrop').close();
+  if(res)res(out);
+}
+$('cropOk').onclick=()=>finishCrop(true);$('cropNo').onclick=()=>finishCrop(false);
+$('dCrop').addEventListener('cancel',e=>{e.preventDefault();finishCrop(false)});
+document.addEventListener('click',async e=>{
+  const ed=e.target.closest('[data-ed]');if(!ed||!tmp)return;
+  const id=ed.dataset.ed,ph=tmp.photo===id,d=await cropFlow(imgs[id],{max:ph?520:1280,q:.72,ar:ph?1:0});
+  if(!d)return;const nid=uid();imgs[nid]=d;added.add(nid);
+  if(ph)tmp.photo=nid;else tmp.shots=tmp.shots.map(x=>x===id?nid:x);
+  drawImgs();
+});
+$('cfgBgEd').onclick=async()=>{const d=await cropFlow(imgs[cfg.bgImg],{max:1200,q:.7,ar:0});if(d){imgs[cfg.bgImg]=d;await kvSet('img:'+cfg.bgImg,d);applyTheme();drawCfg()}};
+
+/* settings: category dropdown + preset brands */
+let brandList=[];
+function drawSetLists(){
+  const row=(t,a,b)=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line);align-items:center"><span>${esc(t)}</span><span style="display:flex;gap:6px"><button class="pen" data-${a}="${esc(t)}" aria-label="改名">✏️</button><button class="pen" data-${b}="${esc(t)}" aria-label="刪除">🗑</button></span></div>`;
+  $('catList').innerHTML=cats.map(c=>row(c,'cr','cd')).join('')||'<div class="meta">還沒有分類</div>';
+  $('brandListUI').innerHTML=brandList.map(c=>row(c,'br','bd')).join('')||'<div class="meta">還沒有常用品牌</div>';
+}
+const _drawCfg=drawCfg;
+drawCfg=function(){_drawCfg();drawSetLists();$('cfgBgEd').style.display=cfg.bgType==='image'&&imgs[cfg.bgImg]?'':'none'};
+$('catNewBtn').onclick=async()=>{const nm=$('catNew').value.trim();if(!nm||nm==='未分類')return;if(cats.includes(nm)){await say('這個分類已經存在。');return}cats.push(nm);$('catNew').value='';await save();drawSetLists();render()};
+$('catList').onclick=async e=>{
+  const r=e.target.closest('[data-cr]'),d=e.target.closest('[data-cd]');
+  if(r){const old=r.dataset.cr,nw=((await ask('分類新名稱',old))||'').trim();if(!nw||nw===old)return;if(cats.includes(nw)||nw==='未分類'){await say('這個名稱已經存在');return}cats=cats.map(c=>c===old?nw:c);items.forEach(i=>{if(i.cat===old)i.cat=nw});await save();drawSetLists();render()}
+  if(d){const old=d.dataset.cd;if(await yes('刪除分類「'+old+'」？裡面的衣服不會被刪除，會變成未分類。')){cats=cats.filter(c=>c!==old);items.forEach(i=>{if(i.cat===old)i.cat=''});await save();drawSetLists();render()}}
+};
+$('brandNewBtn').onclick=async()=>{const nm=$('brandNew').value.trim();if(!nm)return;if(brandList.includes(nm)){await say('這個品牌已經在清單裡了。');return}brandList.push(nm);$('brandNew').value='';await save();drawSetLists()};
+$('brandListUI').onclick=async e=>{
+  const r=e.target.closest('[data-br]'),d=e.target.closest('[data-bd]');
+  if(r){const old=r.dataset.br,nw=((await ask('品牌新名稱',old))||'').trim();if(!nw||nw===old)return;if(brandList.includes(nw)){await say('這個名稱已經存在');return}brandList=brandList.map(c=>c===old?nw:c);items.forEach(i=>{if((i.brand||'').trim()===old)i.brand=nw});await save();drawSetLists();render()}
+  if(d){const old=d.dataset.bd;if(await yes('從常用品牌清單移除「'+old+'」？已經記錄的衣服不受影響。')){brandList=brandList.filter(c=>c!==old);await save();drawSetLists()}}
+};
+
 /* init */
 (async()=>{
   const all=await kvAll();
   if(all.meta&&all.meta.lastBackup)lastBk=all.meta.lastBackup;
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);if(Array.isArray(all.data.orders))orders=all.data.orders;rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg}}
+  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);if(Array.isArray(all.data.orders))orders=all.data.orders;rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg};if(Array.isArray(all.data.brandList))brandList=all.data.brandList}
   else{try{const r=localStorage.getItem('kids-closet-v1');if(r){items=JSON.parse(r).map(i=>({...i,cur:'TWD',rate:1,shots:[]}));await save()}}catch(e){}}
   for(const k in all)if(k.startsWith('img:'))imgs[k.slice(4)]=all[k];
   applyTheme();render();
