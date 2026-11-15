@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#3d6fd8">
+<meta name="apple-mobile-web-app-title" content="小衣櫥">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>女兒的衣櫥帳本</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--ink:#22304a;--sub:#6b7a93;--line:#dde4ef;--acc:#3d6fd8;--acc-ink:#fff;--buy:#d9577a;--sell:#2f9e72;--wait:#c98a1b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a26;--card:#1d2535;--ink:#e8edf7;--sub:#97a4bc;--line:#2d3850;--acc:#7aa2f7;--acc-ink:#0f1626;--buy:#f080a0;--sell:#5ed0a0;--wait:#e8b04a}}
+:root[data-theme="dark"]{--bg:#141a26;--card:#1d2535;--ink:#e8edf7;--sub:#97a4bc;--line:#2d3850;--acc:#7aa2f7;--acc-ink:#0f1626;--buy:#f080a0;--sell:#5ed0a0;--wait:#e8b04a}
+:root{--veil:rgba(255,255,255,.5)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--veil:rgba(20,26,38,.55)}}
+:root[data-theme="dark"]{--veil:rgba(20,26,38,.55)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--page,var(--bg));background-image:var(--bgimg,none);background-size:var(--bgsize,auto);background-position:center;background-attachment:fixed;color:var(--ink);font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:20px 16px 90px}
+h1{font-size:1.5rem;margin:4px 0 14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.stat small{color:var(--sub);display:block;font-size:.78rem}
+.stat b{font-size:1.2rem}
+.buy{color:var(--buy)}.sell{color:var(--sell)}.pos{color:var(--sell)}.neg{color:var(--buy)}
+.calc button{min-height:32px;padding:3px 10px;margin:6px 6px 0 0;font-size:.82rem}
+.bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:42px}
+button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;cursor:pointer;min-height:42px}
+button.p{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.tabs button{white-space:nowrap;border-radius:99px;padding:6px 14px;min-height:36px}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:12px;padding:10px 12px;margin-bottom:10px;cursor:pointer}
+.item[data-s="待售"]{border-left-color:var(--wait)}.item[data-s="已售出"]{border-left-color:var(--sell)}.item[data-s="已購入"]{border-left-color:var(--buy)}
+.th{width:76px;height:76px;border-radius:10px;object-fit:cover;background:var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.bd{flex:1;min-width:0}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.name{font-weight:700}
+.meta{color:var(--sub);font-size:.85rem}
+.tag{font-size:.75rem;border:1px solid var(--line);border-radius:99px;padding:1px 9px;white-space:nowrap}
+.seg{display:flex;flex:1}.seg button{flex:1;border-radius:0}.seg button:first-child{border-radius:10px 0 0 10px}.seg button:last-child{border-radius:0 10px 10px 0}.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer}.bc .pen{min-height:30px;padding:2px 10px;font-size:.82rem}
+.ai{outline:2px solid var(--wait);outline-offset:1px}.aimsg{font-size:.85rem;color:var(--sub);margin-top:6px}
+.seg+button{}#dRep{width:min(920px,96vw)}
+#rtab{overflow-x:auto}#rtab table{border-collapse:collapse;width:100%;font-size:.82rem;white-space:nowrap}
+#rtab th,#rtab td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right}
+#rtab th:first-child,#rtab td:first-child{text-align:left;position:sticky;left:0;background:var(--bg)}
+#rtab tfoot td{font-weight:700;border-top:2px solid var(--ink)}
+#dAsk{width:min(420px,92vw)}
+.filebtn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;cursor:pointer;min-height:42px;display:inline-flex;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chip{display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:99px;font-size:.82rem;overflow:hidden}
+.chip button{min-height:30px;border:none;background:none;padding:2px 6px 2px 11px;border-radius:0}.chip .cx{padding:2px 10px 2px 4px;color:var(--sub);font-size:.75rem}
+.hdr{display:flex;align-items:center;gap:12px;margin:4px 0 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.hdr h1{margin:0;flex:1;font-size:1.3rem;overflow-wrap:anywhere}
+.av{width:56px;height:56px;min-height:0;border-radius:50%;padding:0;overflow:hidden;font-size:1.6rem;flex:none;background:var(--line)}.av img{width:100%;height:100%;object-fit:cover;display:block}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}.sw{width:46px;height:46px;min-height:0;padding:0;border-radius:12px;font-size:.78rem}.sw.sel{outline:3px solid var(--acc);outline-offset:2px}
+details{background:var(--card);border-radius:12px;padding:10px 14px}.empty{background:var(--card);border-radius:12px}
+.empty{text-align:center;color:var(--sub);padding:40px 10px}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:99px;padding:12px 22px}
+dialog{border:none;border-radius:16px;padding:18px;width:min(580px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:.82rem;color:var(--sub);display:block}
+.full{grid-column:1/-1}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.del{margin-right:auto;color:var(--buy)}
+.imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.imgs .im{position:relative}
+.imgs img{width:72px;height:72px;object-fit:cover;border-radius:8px;display:block;cursor:zoom-in}
+.imgs .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;min-height:0;padding:0;border-radius:50%;line-height:1;font-size:.8rem}
+.up{width:72px;height:72px;border:1.5px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--sub);cursor:pointer;font-size:1.4rem}
+.up input{display:none}
+.calc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9rem}
+.sec{font-weight:700;margin:6px 0 -2px}
+details{margin-top:24px;color:var(--sub);font-size:.88rem}
+textarea{min-height:70px}
+.rg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.rg div{display:flex;align-items:center;gap:8px}.rg span{width:46px}
+.shr{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:6px;margin-bottom:8px}
+#big{max-width:96vw;width:auto;padding:8px}#big img{max-width:100%;max-height:82vh;display:block}
+</style>
+</head>
+<body>
+<main id="homePage">
+<div class="hdr"><div class="av" id="av">👗</div><h1 id="ttl"></h1></div>
+<div class="stat" id="bkWarn" style="display:none;margin-bottom:12px;border-color:var(--wait)"></div>
+<div class="stats">
+  <div class="stat"><small>買入／已賣出件數</small><b id="sCnt"></b></div>
+  <div class="stat"><small>總花費（含國際運費）</small><b class="buy" id="sSpend"></b></div>
+  <div class="stat"><small>賣出實收（扣手續費）</small><b class="sell" id="sSell"></b></div>
+  <div class="stat"><small>已賣出衣服盈虧合計</small><b id="sPL"></b></div>
+  <div class="stat"><small>淨支出（花費－實收）</small><b id="sNet"></b></div>
+  <div class="stat"><small>其中運費（國際＋國內）</small><b class="buy" id="sShip"></b></div>
+</div>
+<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip">📦 集運單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
+<div id="brandView"></div>
+<div id="itemView"><div id="bhead"></div><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="margin-bottom:10px"><div class="tabs" id="tabs"></div><div id="list"></div></div>
+
+</main>
+<main id="setPage" style="display:none">
+<div class="hdr"><button id="setBack">← 返回</button><h1>⚙️ 設定</h1></div>
+<div class="stat">
+  <b style="font-size:1rem">🎨 名稱與外觀</b>
+  <label style="margin-top:10px">名稱（想叫什麼都可以）</label><input id="cfgTitle" maxlength="30">
+  <label style="margin-top:14px">名稱旁的照片</label><div class="imgs" id="cfgAv"></div>
+  <label style="margin-top:14px">背景顏色／花色</label><div class="swatches" id="cfgBg"></div>
+  <div class="bar" style="margin-top:8px"><label class="filebtn">用自己的圖片當背景<input type="file" accept="image/*" id="cfgBgIn" style="display:none"></label><label class="filebtn">自選顏色<input type="color" id="cfgColor" style="margin-left:8px;width:34px;height:28px;min-height:0;padding:0;border:none;background:none"></label></div>
+  <button class="del" id="cfgReset" style="margin-top:4px">恢復預設</button>
+</div>
+<div class="stat" style="margin-top:12px">
+  <b style="font-size:1rem">💱 匯率</b>
+  <p class="meta">各幣別換算成台幣的預設匯率，新增衣服時會自動帶入。</p>
+  <button id="bRate">匯率設定</button>
+</div>
+<div class="stat" style="margin-top:12px">
+  <b style="font-size:1rem">💾 備份與換手機</b>
+  <p class="meta">資料和照片只存在這個瀏覽器裡。匯出「完整備份」會得到一個檔案，包含所有衣服、照片、截圖、集運單、匯率和衣櫃。換手機或電腦時，在新裝置打開這個檔案，再按「匯入備份檔」，就不用重新輸入。</p>
+  <div class="bar"><button class="p" id="fullBk">匯出完整備份（含照片）</button><label class="filebtn">匯入備份檔<input type="file" id="fullIn" accept=".json,application/json" style="display:none"></label></div>
+  <div class="meta" id="bkMsg"></div>
+</div>
+<details>
+  <summary>文字備份（不含照片）</summary>
+  <p>只有文字紀錄，不含照片與截圖。</p>
+  <div class="bar"><button id="bk">複製備份文字</button><button id="rs">貼上還原</button></div>
+  <textarea id="io" placeholder="備份文字會出現在這裡；還原時貼上再按「貼上還原」"></textarea>
+</details>
+</main>
+<button class="p fab" id="add">＋ 新增衣服</button>
+
+<dialog id="dlg">
+  <div class="g">
+    <div class="full"><label>商品照片</label><div class="imgs" id="phWrap"></div></div>
+    <div class="full"><label>名稱 *</label><input id="f_name" placeholder="例：小熊連帽外套"></div>
+    <div><label>狀態</label><select id="f_status"><option>已購入</option><option>待售</option><option>已售出</option><option>收藏中</option></select></div>
+    <div><label>尺寸</label><input id="f_size" placeholder="例：110 / 5Y"><div class="chips" data-chip="size"></div></div>
+    <div><label>品牌</label><input id="f_brand" list="brands"><datalist id="brands"></datalist><div class="chips" data-chip="brand"></div></div>
+    <div><label>買自哪裡</label><input id="f_bw" placeholder="Mercari、eBay、FB 社團…"><div class="chips" data-chip="bw"></div></div>
+    <div><label>所屬衣櫃</label><select id="f_cat"></select></div>
+    <div><label>重量（集運分攤用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
+    <div class="full sec">購買資料</div>
+    <div><label>幣別</label><select id="f_cur"></select></div>
+    <div><label>匯率（1 單位 = 幾元台幣）</label><input id="f_rate" type="number" inputmode="decimal" step="any" min="0"></div>
+    <div><label>商品價格（原幣）</label><input id="f_bp" type="number" inputmode="decimal" step="any" min="0"></div>
+    <div><label>賣家當地運費／平台費（原幣）</label><input id="f_ls" type="number" inputmode="decimal" step="any" min="0"></div>
+    <div><label>買入日期</label><input id="f_bd" type="date"></div>
+    <div><label>所屬集運單</label><select id="f_batch"></select></div>
+    <div class="full calc" id="calc"></div>
+    <div class="full"><label>購買截圖</label><div class="imgs" id="shWrap"></div></div>
+    <div class="full" id="aiRow" style="display:none"><button type="button" class="p" id="aiBtn">✨ 用截圖自動填入</button><div class="aimsg" id="aiMsg"></div></div>
+    <div class="full sec">日後賣出／賣出資料（台幣）</div>
+    <div><label>預計售價（還沒賣出時填）</label><input id="f_ask" type="number" inputmode="decimal" min="0"></div>
+    <div><label>賣出手續費／運費</label><input id="f_sf" type="number" inputmode="decimal" min="0"></div>
+    <div><label>賣出價</label><input id="f_sp" type="number" inputmode="decimal" min="0"></div>
+    <div><label>賣出日期</label><input id="f_sd" type="date"></div>
+    <div class="full"><label>賣在哪裡／賣給誰</label><input id="f_sw"><div class="chips" data-chip="sw"></div></div>
+    <div class="full calc" id="calc2"></div>
+    <div class="full"><label>備註</label><textarea id="f_note" placeholder="瑕疵、材質、穿過幾次…"></textarea></div>
+  </div>
+  <div class="acts"><button class="del" id="del">刪除</button><button id="cancel">取消</button><button class="p" id="save">儲存</button></div>
+</dialog>
+
+<dialog id="dRate">
+  <div class="sec" style="margin-bottom:8px">匯率設定（1 單位外幣 = 幾元台幣）</div>
+  <p class="meta">這裡的數字只是預設值，不是即時匯率。請依你刷卡或實際換匯的匯率修改。新增衣服時會自動帶入，也可以每件單獨調整。</p>
+  <div class="rg" id="rg"></div>
+  <div class="acts"><button class="p" id="rOk">完成</button></div>
+</dialog>
+
+<dialog id="dShip">
+  <div class="sec" style="margin-bottom:8px">集運單／國際運費（台幣）</div>
+  <p class="meta">每次集運建立一筆：填每磅費用，系統用衣服重量加總，未滿一磅以一磅計費，算出國際運費；國內運費另外填。有填每件衣服的重量就按重量分攤，沒填則平均分攤。</p>
+  <div id="shl"></div>
+  <button id="shAdd">＋ 新增集運單</button>
+  <div class="acts"><button class="p" id="sOk">完成</button></div>
+</dialog>
+<dialog id="big"><img id="bigImg" alt="放大檢視"></dialog>
+
+<dialog id="dAsk"><div id="askMsg" style="margin-bottom:10px;white-space:pre-wrap"></div><input id="askIn"><div class="acts"><button id="askNo">取消</button><button class="p" id="askOk">確定</button></div></dialog>
+<dialog id="dRep">
+  <div class="sec" style="margin-bottom:8px">買賣與花費報表</div>
+  <div class="bar"><div class="seg" id="rseg"><button data-m="w">週</button><button data-m="m">月</button><button data-m="y">年</button></div></div>
+  <div id="rtab"></div>
+  <p class="meta">買入依「買入日期」、賣出依「賣出日期」統計；運費依集運單日期計入。沒填日期的會歸在「未填日期」。賣出盈虧＝賣出價－手續費－總成本。</p>
+  <div class="meta" id="rmsg" style="min-height:1.4em"></div>
+  <div class="acts"><button id="rClose">關閉</button><button id="rXls">匯出 Excel</button><button class="p" id="rPdf">匯出 PDF</button></div>
+</dialog>
+<script>
+const $=id=>document.getElementById(id);
+const CUR=['TWD','USD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
+const DEF={TWD:1,USD:32,JPY:0.21,KRW:0.023,CNY:4.4,HKD:4.1,EUR:35,GBP:41,AUD:21,CAD:23};
+const STAT=['全部','已購入','待售','已售出','收藏中'];
+let items=[],ships=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
+/* storage: IndexedDB with in-memory fallback */
+const dbp=new Promise(r=>{try{const q=indexedDB.open('closet',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
+async function kvSet(k,v){const d=await dbp;if(!d)return;return new Promise(r=>{try{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
+async function kvDel(k){const d=await dbp;if(!d)return;try{d.transaction('kv','readwrite').objectStore('kv').delete(k)}catch(e){}}
+async function kvAll(){const d=await dbp;if(!d)return{};return new Promise(r=>{const o={};try{const c=d.transaction('kv').objectStore('kv').openCursor();c.onsuccess=()=>{const x=c.result;if(x){o[x.key]=x.value;x.continue()}else r(o)};c.onerror=()=>r(o)}catch(e){r(o)}})}
+const save=()=>kvSet('data',{items,ships,rates,cats,hid,cfg});
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const n=v=>Number(v)||0;
+const money=v=>'NT$'+Math.round(v).toLocaleString('zh-TW');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* cost */
+const migShips=a=>a.map(s=>('rate' in s)?s:{...s,rate:'',dom:'',ow:'',fixedIntl:s.fee});
+const wlb=i=>n(i.w)*({'磅':1,'公斤':2.20462,'克':0.00220462}[i.wu||'磅']||1);
+function shipCalc(sid,extra){
+  const s=ships.find(x=>x.id===sid);if(!s)return null;
+  let list=items.filter(i=>i.batch===sid).map(i=>({id:i.id,lb:wlb(i)}));
+  if(extra){list=list.filter(x=>x.id!==extra.id);list.push(extra)}
+  const sum=list.reduce((a,x)=>a+x.lb,0),all=list.length>0&&list.every(x=>x.lb>0);
+  const actual=n(s.ow)>0?n(s.ow):sum,billed=actual>0?Math.ceil(actual-1e-9):0;
+  const intl=n(s.rate)>0?billed*n(s.rate):n(s.fixedIntl),dom=n(s.dom);
+  return {s,list,sum,all,actual,billed,intl,dom,total:intl+dom};
+}
+const shareOf=(c,lb)=>!c.list.length?0:(c.all?lb/c.sum:1/c.list.length);
+function shipParts(i){const c=i.batch?shipCalc(i.batch):null;if(!c)return {intl:0,dom:0,blb:0};const sh=shareOf(c,wlb(i));return {intl:c.intl*sh,dom:c.dom*sh,blb:c.billed*sh}}
+const shipOf=i=>{const p=shipParts(i);return p.intl+p.dom};
+const goodsTWD=i=>(n(i.bp)+n(i.ls))*(n(i.rate)||1);
+const costOf=i=>goodsTWD(i)+shipOf(i);const sold=i=>i.status==='已售出';const plOf=i=>n(i.sp)-n(i.sf)-costOf(i);
+const sgn=v=>(Math.round(v)>0?'+':Math.round(v)<0?'−':'')+money(Math.abs(v));const cls=v=>v>=0?'pos':'neg';
+const bname=i=>(i.brand||'').trim()||'未分類';
+const cname=i=>(i.cat&&cats.includes(i.cat))?i.cat:'未分類';
+const gkey=i=>view==='cat'?cname(i):bname(i);
+function drawGroups(){
+  const m={};if(view==='cat')cats.forEach(c=>m[c]=[]);
+  items.forEach(i=>{(m[gkey(i)]=m[gkey(i)]||[]).push(i)});
+  let rows=Object.entries(m);
+  if(view==='cat')rows=rows.filter(([k,a])=>k!=='未分類'||a.length);else rows.sort((a,b)=>b[1].length-a[1].length);
+  const head=view==='cat'?'<div class="bar"><button id="catAdd" class="p">＋ 新增衣櫃</button><button id="catBrand">依品牌自動建立</button></div><p class="meta" style="margin:0 0 10px">衣櫃名稱可以自己取，例如「夏天」「RR 專櫃」「洋裝」。想依品牌分，可按「依品牌自動建立」。</p>':'';
+  $('brandView').innerHTML=head+(rows.length?rows.map(([b,a])=>{
+    const cost=a.reduce((t,i)=>t+costOf(i),0),sl=a.filter(sold),pl=sl.reduce((t,i)=>t+plOf(i),0),c=k=>a.filter(i=>i.status===k).length;
+    return `<div class="bc" data-b="${esc(b)}" tabindex="0"><div class="row"><span class="name">${esc(b)}</span><b class="buy">${money(cost)}</b></div>
+    <div class="row meta"><span>共 ${a.length} 件・已購入 ${c('已購入')}・待售 ${c('待售')}・已售出 ${sl.length}</span>${sl.length?`<span>盈虧 <b class="${cls(pl)}">${sgn(pl)}</b></span>`:''}</div>
+    ${b!=='未分類'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="pen" data-ren="${esc(b)}">✏️ 改名</button>${view==='cat'?`<button class="pen" data-del="${esc(b)}">🗑 刪除衣櫃</button>`:''}</div>`:''}</div>`}).join(''):'<div class="empty">還沒有紀錄，點右下角「新增衣服」開始吧</div>');
+}
+function render(){bkStatus();
+  const goods=items.reduce((a,i)=>a+goodsTWD(i),0),ship=ships.reduce((a,s)=>a+shipCalc(s.id).total,0),sl=items.filter(sold);
+  const sell=sl.reduce((a,i)=>a+n(i.sp)-n(i.sf),0),pl=sl.reduce((a,i)=>a+plOf(i),0);
+  $('sCnt').textContent=items.length+' 件 / '+sl.length+' 件';$('sSpend').textContent=money(goods+ship);$('sShip').textContent=money(ship);$('sSell').textContent=money(sell);
+  $('sPL').textContent=sgn(pl);$('sPL').className=cls(pl);$('sNet').textContent=sgn(goods+ship-sell).replace('+','');
+  $('seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
+  const bv=view!=='all'&&!curBrand;$('brandView').style.display=bv?'':'none';$('itemView').style.display=bv?'none':'';
+  $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(curBrand)}</b></div>`:'';
+  if(bv)drawGroups();
+  const pool=curBrand?items.filter(i=>gkey(i)===curBrand):items;
+  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s} ${s==='全部'?pool.length:pool.filter(i=>i.status===s).length}</button>`).join('');
+  const q=$('q').value.trim().toLowerCase();
+  const list=items.filter(i=>(!curBrand||gkey(i)===curBrand)&&(filter==='全部'||i.status===filter)&&(!q||[i.name,i.brand,i.cat,i.size,i.note,i.bw,i.sw].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
+  $('list').innerHTML=list.length?list.map(i=>{const g=goodsTWD(i),sh=shipOf(i),foreign=i.cur&&i.cur!=='TWD';
+    return `<div class="item" data-id="${i.id}" data-s="${i.status}" tabindex="0">
+    ${i.photo&&imgs[i.photo]?`<img class="th" src="${imgs[i.photo]}" alt="">`:'<div class="th">👚</div>'}
+    <div class="bd"><div class="row"><span class="name">${esc(i.name)}</span><span class="tag">${i.status}</span></div>
+    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw].filter(Boolean).map(esc).join('・')}</div>
+    <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
+    `<div class="empty">${items.length?'沒有符合的衣服':'還沒有紀錄，點右下角「新增衣服」開始吧'}</div>`;
+}
+/* images */
+function shrink(file,max,q){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',q))};im.onerror=()=>res(null);im.src=fr.result};fr.onerror=()=>res(null);fr.readAsDataURL(file)})}
+function drawImgs(){
+  if(aiSample)$('aiRow').style.display=tmp.shots.length?'':'none';
+  const mk=(id,k)=>`<div class="im"><img src="${imgs[id]}" data-big="${id}" alt=""><button class="x" data-rm="${k}:${id}" aria-label="移除">✕</button></div>`;
+  $('phWrap').innerHTML=(tmp.photo?mk(tmp.photo,'p'):'')+(tmp.photo?'':`<label class="up">📷<input type="file" accept="image/*" id="inPh"></label>`);
+  $('shWrap').innerHTML=tmp.shots.map(id=>mk(id,'s')).join('')+`<label class="up">＋<input type="file" accept="image/*" multiple id="inSh"></label>`;
+  $('inPh')&&($('inPh').onchange=async e=>{const d=await shrink(e.target.files[0],520,.72);if(d){const id=uid();imgs[id]=d;added.add(id);tmp.photo=id;drawImgs()}});
+  $('inSh').onchange=async e=>{for(const f of e.target.files){const d=await shrink(f,1280,.72);if(d){const id=uid();imgs[id]=d;added.add(id);tmp.shots.push(id)}}drawImgs()};
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-big]');if(b){$('bigImg').src=imgs[b.dataset.big];$('big').showModal();return}
+  const r=e.target.closest('[data-rm]');if(r){const[k,id]=r.dataset.rm.split(':');if(k==='p')tmp.photo='';else tmp.shots=tmp.shots.filter(x=>x!==id);drawImgs()}
+});
+$('big').onclick=()=>$('big').close();
+/* form */
+const F=['name','status','size','brand','bw','cat','w','wu','cur','rate','bp','ls','bd','ask','sf','sp','sd','sw','note'];
+function fillCats(){$('f_cat').innerHTML='<option value="">（未分類）</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__new">＋ 新增衣櫃…</option>'}
+$('f_cat').onchange=async()=>{if($('f_cat').value==='__new'){const nm=(await ask('新衣櫃名稱')||'').trim();if(nm&&nm!=='未分類'&&!cats.includes(nm)){cats.push(nm);await save()}fillCats();$('f_cat').value=cats.includes(nm)?nm:''}};
+function formCalc(){
+  const r=n($('f_rate').value)||1,g=(n($('f_bp').value)+n($('f_ls').value))*r;
+  const lb=n($('f_w').value)*({'磅':1,'公斤':2.20462,'克':0.00220462}[$('f_wu').value]||1);
+  const bid=$('f_batch').value,c=bid?shipCalc(bid,{id:editId||'__cur',lb}):null;
+  let intl=0,dom=0,blb=0;if(c){const sh=shareOf(c,lb);intl=c.intl*sh;dom=c.dom*sh;blb=c.billed*sh}
+  return {r,g,lb,c,intl,dom,blb,cost:g+intl+dom};
+}
+function calc2(){
+  const f=formCalc(),cost=f.cost,sf=n($('f_sf').value),ask=n($('f_ask').value),sp=n($('f_sp').value),base=cost+sf,pr=m=>Math.ceil((cost*m+sf)/10)*10;
+  let h=`總成本 <b>${money(cost)}</b>　回本價（含賣出手續費）<b>${money(base)}</b>`;
+  if(sp)h+=`<br>實際盈虧 <b class="${cls(sp-base)}">${sgn(sp-base)}</b>`;
+  else if(ask)h+=`<br>以預計售價賣出，預估盈虧 <b class="${cls(ask-base)}">${sgn(ask-base)}</b>`;
+  h+=`<br>快速設定預計售價：<button type="button" data-ask="${Math.ceil(base/10)*10}">回本 ${money(Math.ceil(base/10)*10)}</button><button type="button" data-ask="${pr(1.1)}">賺 10% ${money(pr(1.1))}</button><button type="button" data-ask="${pr(1.2)}">賺 20% ${money(pr(1.2))}</button>`;
+  $('calc2').innerHTML=h;
+}
+$('calc2').onclick=e=>{const b=e.target.closest('[data-ask]');if(b){$('f_ask').value=b.dataset.ask;calc2()}};
+function calc(){
+  const f=formCalc(),cur=$('f_cur').value,fx=n($('f_bp').value)+n($('f_ls').value);
+  let h=`商品＋當地運費約 <b>${money(f.g)}</b>${cur!=='TWD'?`（${cur} ${fx} × ${f.r}）`:''}`;
+  if(f.c){h+=`<br>集運：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
+    if(f.lb<=0)h+='<br><span class="meta">這件沒填重量，目前依平均分攤</span>'}
+  h+=`<br>總成本 <b class="buy">${money(f.cost)}</b>`;
+  $('calc').innerHTML=h;calc2();
+}
+function openEdit(id){
+  editId=id;added=new Set();
+  const it=items.find(i=>i.id===id)||{status:'已購入',brand:view!=='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cat:view==='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cur:'TWD',rate:1,bd:new Date().toISOString().slice(0,10)};
+  tmp={photo:it.photo||'',shots:[...(it.shots||[])],orig:[it.photo,...(it.shots||[])].filter(Boolean)};
+  $('f_cur').innerHTML=CUR.map(c=>`<option>${c}</option>`).join('');
+  fillCats();
+  $('brands').innerHTML=[...new Set(items.map(i=>(i.brand||'').trim()).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
+  $('f_batch').innerHTML='<option value="">（無）</option>'+ships.map(s=>`<option value="${s.id}">${esc(s.name||'未命名')}${s.date?' '+esc(s.date):''}</option>`).join('');
+  F.forEach(k=>{$('f_'+k).value=it[k]??'';$('f_'+k).classList.remove('ai')});$('f_wu').value=it.wu||'磅';$('aiMsg').textContent='會讀取上方截圖，把看得出來的資料填入空白欄位，填完你都可以修改。';$('f_batch').value=it.batch||'';
+  $('del').style.display=id?'':'none';drawImgs();drawChips();calc();$('dlg').showModal();
+}
+$('f_cur').onchange=()=>{$('f_rate').value=rates[$('f_cur').value]||1;calc()};
+['f_rate','f_bp','f_ls','f_batch','f_ask','f_sf','f_sp','f_w','f_wu'].forEach(k=>{$(k).oninput=calc;$(k).onchange=calc});
+$('add').onclick=()=>openEdit(null);
+$('cancel').onclick=()=>{added.forEach(id=>delete imgs[id]);$('dlg').close()};
+$('dlg').addEventListener('cancel',()=>added.forEach(id=>delete imgs[id]));
+$('save').onclick=async()=>{
+  if(!$('f_name').value.trim()){$('f_name').focus();return}
+  const o={};F.forEach(k=>o[k]=$('f_'+k).value.trim());
+  ['size','brand','bw','sw'].forEach(k=>{if(o[k]&&hid[k])hid[k]=hid[k].filter(x=>x!==o[k])});
+  o.batch=$('f_batch').value;o.photo=tmp.photo;o.shots=tmp.shots;
+  if(o.sp&&(o.status==='已購入'||o.status==='待售'))o.status='已售出';
+  let id=editId;
+  if(id)Object.assign(items.find(i=>i.id===id),o);else{id=uid();items.push({id,created:new Date().toISOString().slice(0,10),...o})}
+  const keep=new Set([o.photo,...o.shots]);
+  for(const k of keep)if(k&&added.has(k))await kvSet('img:'+k,imgs[k]);
+  for(const k of tmp.orig)if(!keep.has(k)){await kvDel('img:'+k);delete imgs[k]}
+  for(const k of added)if(!keep.has(k))delete imgs[k];
+  await save();render();$('dlg').close();
+};
+$('del').onclick=async()=>{if(!await yes('確定要刪除這件衣服的紀錄（含照片）嗎？'))return;
+  const it=items.find(i=>i.id===editId);for(const k of [it.photo,...(it.shots||[])])if(k){await kvDel('img:'+k);delete imgs[k]}
+  items=items.filter(i=>i.id!==editId);await save();render();$('dlg').close()};
+$('brandView').onclick=async e=>{
+  if(e.target.closest('#catBrand')){const bs=[...new Set(items.map(i=>(i.brand||'').trim()).filter(Boolean))];if(!bs.length){await say('目前沒有填寫品牌的衣服');return}if(!await yes('會為每個品牌建立一個衣櫃（共 '+bs.length+' 個），並把有品牌的衣服放進對應衣櫃，這些衣服原本的衣櫃歸屬會被取代。確定嗎？'))return;bs.forEach(b=>{if(!cats.includes(b))cats.push(b)});items.forEach(i=>{const b=(i.brand||'').trim();if(b)i.cat=b});await save();render();return}
+  if(e.target.closest('#catAdd')){const nm=(await ask('新衣櫃名稱（例：夏天、RR 專櫃、洋裝）')||'').trim();if(nm&&!cats.includes(nm)&&nm!=='未分類'){cats.push(nm);await save();render()}return}
+  const r=e.target.closest('[data-ren]');
+  if(r){const old=r.dataset.ren,nw=(await ask(view==='cat'?'衣櫃新名稱':'品牌新名稱',old)||'').trim();
+    if(nw&&nw!==old){if(view==='cat'){if(cats.includes(nw)||nw==='未分類'){await say('這個名稱已經存在');return}cats=cats.map(c=>c===old?nw:c);items.forEach(i=>{if(i.cat===old)i.cat=nw})}else items.forEach(i=>{if(bname(i)===old)i.brand=nw});await save();render()}return}
+  const d=e.target.closest('[data-del]');
+  if(d){const old=d.dataset.del;if(await yes('刪除衣櫃「'+old+'」？裡面的衣服不會被刪除，會變成未分類。')){cats=cats.filter(c=>c!==old);items.forEach(i=>{if(i.cat===old)i.cat=''});await save();render()}return}
+  const c=e.target.closest('[data-b]');if(c){curBrand=c.dataset.b;filter='全部';render()}};
+$('seg').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;curBrand=null;render()}};
+$('bhead').onclick=e=>{if(e.target.closest('#bBack')){curBrand=null;render()}};
+document.addEventListener('input',e=>{e.target.classList&&e.target.classList.remove('ai')});
+function toBlob(d){const p=d.split(','),m=/:(.*?);/.exec(p[0])[1],b=atob(p[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:m})}
+$('aiBtn').onclick=async()=>{
+  if(!aiSample||!tmp.shots.length)return;
+  const btn=$('aiBtn'),msg=$('aiMsg');btn.disabled=true;msg.textContent='Claude 正在讀取截圖…（可能需要十幾秒）';
+  try{
+    try{const lim=await aiSample.limits();if(lim&&!lim.images){msg.textContent='目前無法讀取圖片，請手動填寫。';return}}catch(e){}
+    const prompt=`你是購物截圖的資料擷取助手。附上的是一件二手童裝的購買頁面或訂單截圖。只依截圖上看得到的內容回答，看不到就給空字串，不要猜測。只回傳一個 JSON 物件，不要任何其他文字，欄位如下：
+name：商品名稱（保留截圖原文）
+brand：品牌
+size：尺寸（例如 24M、2T、110）
+cur：幣別，只能是 USD、JPY、KRW、CNY、HKD、EUR、GBP、AUD、CAD、TWD 其中之一（依幣別符號與網站判斷），無法判斷就空字串
+bp：商品本身價格（純數字，原幣，不含運費與平台費）
+ls：運費加上平台費、買家保護費等額外費用的合計（純數字，原幣），沒有就 0。若截圖同時有含費總價與商品價，ls＝總價－商品價
+bd：購買或訂單日期，格式 YYYY-MM-DD，看不到就空字串
+bw：購買平台或網站名稱
+note：狀況、顏色、材質等簡短備註，繁體中文，不超過 40 字`;
+    const d=await aiSample.json(prompt,{images:tmp.shots.slice(0,4).map(id=>toBlob(imgs[id])),modelTier:'default'});
+    const filled=[],mark=(k)=>{$('f_'+k).classList.add('ai');filled.push(k)};
+    ['name','brand','size','bw','note'].forEach(k=>{const v=String(d[k]??'').trim();if(v&&!$('f_'+k).value.trim()){$('f_'+k).value=v;mark(k)}});
+    ['bp','ls'].forEach(k=>{const v=parseFloat(String(d[k]??'').replace(/[^0-9.]/g,''));if(v>0&&!$('f_'+k).value.trim()){$('f_'+k).value=v;mark(k)}});
+    if(CUR.includes(d.cur)&&d.cur!=='TWD'&&$('f_cur').value==='TWD'){$('f_cur').value=d.cur;$('f_rate').value=rates[d.cur]||1;mark('cur');mark('rate')}
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d.bd||'')&&$('f_bd').value===new Date().toISOString().slice(0,10)){$('f_bd').value=d.bd;mark('bd')}
+    calc();
+    msg.textContent=filled.length?`已填入 ${filled.length} 個欄位（橘色框線），請檢查後再儲存。匯率是預設值，記得依實際匯率修改。`:'截圖裡沒找到可填入的資料，或相關欄位已有內容。';
+  }catch(e){
+    msg.textContent=e&&e.code==='not_granted'?'需要允許使用 Claude 才能讀取截圖，請再按一次並選擇允許。':e&&e.code==='rate_limited'?'太頻繁了，請稍等一下再試。':'讀取失敗，請手動填寫。';
+  }finally{btn.disabled=false}
+};
+try{window.claude&&window.claude.use('sample').then(x=>{aiSample=x;if(tmp&&$('dlg').open)drawImgs()}).catch(()=>{})}catch(e){}
+$('list').onclick=e=>{const c=e.target.closest('.item');if(c)openEdit(c.dataset.id)};
+$('list').onkeydown=e=>{if(e.key==='Enter'){const c=e.target.closest('.item');if(c)openEdit(c.dataset.id)}};
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(b){filter=b.dataset.t;render()}};
+$('q').oninput=render;
+/* rates */
+$('bRate').onclick=()=>{$('rg').innerHTML=CUR.filter(c=>c!=='TWD').map(c=>`<div><span>${c}</span><input type="number" step="any" min="0" data-c="${c}" value="${rates[c]}"></div>`).join('');$('dRate').showModal()};
+$('rOk').onclick=async()=>{document.querySelectorAll('#rg input').forEach(i=>{if(n(i.value)>0)rates[i.dataset.c]=n(i.value)});await save();$('dRate').close()};
+/* shipments */
+function shipSummary(s){
+  const c=shipCalc(s.id),cnt=c.list.length;let t=`衣服 ${cnt} 件，`;
+  if(n(s.rate)>0){t+=`實際 <b>${+c.actual.toFixed(2)} 磅</b> → 計費 <b>${c.billed} 磅</b> × ${money(n(s.rate))} = 國際運費 <b>${money(c.intl)}</b>`;
+    if(c.billed>c.actual+1e-9)t+=`（再 ${+(c.billed-c.actual).toFixed(2)} 磅剛好湊滿）`;else if(c.billed)t+='（剛好湊滿）'}
+  else t+=`國際運費 <b>${money(c.intl)}</b>（舊資料的固定金額；填入每磅費用後改為依重量計算）`;
+  t+=`<br>國內運費 ${money(c.dom)}　總運費 <b>${money(c.total)}</b>`;
+  if(!c.all&&cnt)t+='<br>⚠ 有衣服沒填重量，運費改為平均分攤';
+  return t}
+function drawShips(){
+  $('shl').innerHTML=ships.map(s=>`<div class="bc" style="cursor:default" data-sid="${s.id}"><div class="g">
+   <div><label>名稱</label><input data-f="name" placeholder="例：10 月集運" value="${esc(s.name)}"></div>
+   <div><label>日期</label><input data-f="date" type="date" value="${esc(s.date)}"></div>
+   <div><label>每磅費用 NT$</label><input data-f="rate" type="number" inputmode="decimal" min="0" value="${esc(s.rate)}"></div>
+   <div><label>國內運費 NT$</label><input data-f="dom" type="number" inputmode="decimal" min="0" value="${esc(s.dom)}"></div>
+   <div class="full"><label>整箱實際重量（磅，選填；留空則自動加總衣服重量）</label><input data-f="ow" type="number" inputmode="decimal" step="any" min="0" value="${esc(s.ow)}"></div></div>
+   <div class="sc meta" style="margin-top:8px">${shipSummary(s)}</div><div class="acts"><button data-d="${s.id}">刪除這張集運單</button></div></div>`).join('')||'<div class="empty">還沒有集運單</div>';
+}
+$('bShip').onclick=()=>{drawShips();$('dShip').showModal()};
+$('shAdd').onclick=()=>{const last=ships[ships.length-1];ships.push({id:uid(),name:'',date:new Date().toISOString().slice(0,10),rate:last&&n(last.rate)>0?last.rate:180,dom:'',ow:''});drawShips()};
+$('shl').oninput=e=>{const r=e.target.closest('[data-sid]');if(r&&e.target.dataset.f){const s=ships.find(x=>x.id===r.dataset.sid);s[e.target.dataset.f]=e.target.value;r.querySelector('.sc').innerHTML=shipSummary(s)}};
+$('shl').onclick=async e=>{const b=e.target.closest('[data-d]');if(b&&await yes('刪除這張集運單？衣服紀錄會保留。')){ships=ships.filter(s=>s.id!==b.dataset.d);items.forEach(i=>{if(i.batch===b.dataset.d)i.batch=''});drawShips()}};
+$('sOk').onclick=async()=>{await save();render();$('dShip').close()};
+/* backup */
+$('bk').onclick=async()=>{const t=JSON.stringify({items:items.map(i=>({...i,photo:'',shots:[]})),ships,rates,cats});$('io').value=t;
+  try{await navigator.clipboard.writeText(t);$('bk').textContent='已複製 ✓'}catch(e){$('io').select();$('bk').textContent='請手動複製上方文字'}setTimeout(()=>$('bk').textContent='複製備份文字',2500)};
+$('rs').onclick=async()=>{try{const d=JSON.parse($('io').value);const a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw 0;
+  if(await yes('這會用備份取代目前所有文字資料（照片會遺失），確定嗎？')){items=a;ships=migShips(d.ships||[]);rates={...DEF,...(d.rates||{})};if(Array.isArray(d.cats))cats=d.cats;await save();render();$('io').value=''}}catch(e){await say('備份文字格式不正確，請重新複製完整內容。')}};
+/* in-page dialogs (native prompt/confirm/alert are blocked in published pages) */
+function dlgAsk(msg,def,mode){return new Promise(res=>{const d=$('dAsk'),inp=$('askIn');let done=false;
+  $('askMsg').textContent=msg;inp.style.display=mode==='input'?'':'none';inp.value=def||'';$('askNo').style.display=mode==='say'?'none':'';
+  const fin=v=>{if(done)return;done=true;if(d.open)d.close();res(v)};
+  $('askOk').onclick=()=>fin(mode==='input'?inp.value:true);$('askNo').onclick=()=>fin(mode==='input'?null:false);
+  d.oncancel=()=>fin(mode==='input'?null:false);inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('askOk').click()}};
+  d.showModal();if(mode==='input')setTimeout(()=>{inp.focus();inp.select()},50)})}
+const ask=(m,d)=>dlgAsk(m,d,'input'),yes=m=>dlgAsk(m,'','yes'),say=m=>dlgAsk(m,'','say');
+
+/* reports */
+let rmode='m';
+const RN={w:'週報',m:'月報',y:'年報'};
+const RCOLS=[['期間','label'],['買入件數','buyN'],['商品花費','goods'],['運費','ship'],['總花費','spend'],['賣出件數','sellN'],['賣出金額','sellAmt'],['手續費','fees'],['賣出盈虧','pl']];
+const todayS=()=>new Date().toISOString().slice(0,10);
+function pkey(ds,m){if(!/^\d{4}-\d{2}-\d{2}$/.test(ds||''))return null;if(m==='y')return ds.slice(0,4);if(m==='m')return ds.slice(0,7);
+  const d=new Date(ds+'T00:00:00Z'),w=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-w);return d.toISOString().slice(0,10)}
+function plabel(k,m){if(m!=='w')return k;const d=new Date(k+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+6);return k+' ～ '+d.toISOString().slice(5,10)}
+function report(m){
+  const R={},g=k=>R[k]||(R[k]={buyN:0,goods:0,ship:0,sellN:0,sellAmt:0,fees:0,pl:0});
+  items.forEach(i=>{const r=g(pkey(i.bd,m)||'~');r.buyN++;r.goods+=goodsTWD(i);
+    if(sold(i)){const q=g(pkey(i.sd,m)||'~');q.sellN++;q.sellAmt+=n(i.sp);q.fees+=n(i.sf);q.pl+=plOf(i)}});
+  ships.forEach(x=>{const c=shipCalc(x.id);if(c.total>0)g(pkey(x.date,m)||'~').ship+=c.total});
+  const keys=Object.keys(R).sort((a,b)=>a==='~'?1:b==='~'?-1:b.localeCompare(a));
+  const rows=keys.map(k=>({label:k==='~'?'未填日期':plabel(k,m),...R[k],spend:R[k].goods+R[k].ship}));
+  const t={label:'合計',buyN:0,goods:0,ship:0,spend:0,sellN:0,sellAmt:0,fees:0,pl:0};
+  rows.forEach(r=>{for(const k in t)if(k!=='label')t[k]+=r[k]});
+  return {rows,t};
+}
+const isCnt=k=>k==='buyN'||k==='sellN';
+const txt=(r,k)=>k==='label'?r.label:isCnt(k)?String(r[k]):k==='pl'?sgn(r[k]):money(r[k]);
+function drawRep(){
+  $('rseg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===rmode));
+  const {rows,t}=report(rmode);
+  const cell=(r,k)=>k==='pl'?`<span class="${cls(r.pl)}">${sgn(r.pl)}</span>`:esc(txt(r,k));
+  $('rtab').innerHTML=rows.length?`<table><thead><tr>${RCOLS.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${RCOLS.map(c=>`<td>${cell(r,c[1])}</td>`).join('')}</tr>`).join('')}</tbody><tfoot><tr>${RCOLS.map(c=>`<td>${cell(t,c[1])}</td>`).join('')}</tr></tfoot></table>`:'<div class="empty">還沒有資料</div>';
+}
+$('bRep').onclick=()=>{$('rmsg').textContent='';drawRep();$('dRep').showModal()};
+$('rClose').onclick=()=>$('dRep').close();
+$('rseg').onclick=e=>{const b=e.target.closest('button');if(b){rmode=b.dataset.m;drawRep()}};
+const LIBS={xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',()=>window.XLSX],pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>window.jspdf]};
+function lib(k){const [u,get]=LIBS[k];return new Promise((res,rej)=>{if(get())return res(get());const el=document.createElement('script');el.src=u;el.onload=()=>get()?res(get()):rej(new Error('load'));el.onerror=()=>rej(new Error('load'));document.head.appendChild(el)})}
+async function saveFile(name,data,mid){
+  const msg=$(mid||'rmsg');let d=null;
+  try{d=window.claude?await window.claude.use('downloads'):null}catch(e){}
+  if(!d){try{const bl=data instanceof Blob?data:new Blob([data]);const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);msg.textContent='已下載：'+name;return true}catch(e){msg.textContent='無法下載檔案。';return}}
+  try{await d.save({filename:name,data});msg.textContent='已送出下載：'+name;return true}
+  catch(e){msg.textContent=e&&e.code==='declined'?'已取消下載。':'下載失敗：'+((e&&e.message)||'請再試一次')}
+}
+async function exportXls(){
+  const btn=$('rXls');btn.disabled=true;$('rmsg').textContent='正在產生 Excel…';
+  try{
+    const X=await lib('xlsx'),wb=X.utils.book_new();
+    ['w','m','y'].forEach(m=>{const {rows,t}=report(m);
+      const aoa=[RCOLS.map(c=>c[0]),...[...rows,t].map(r=>RCOLS.map(c=>c[1]==='label'||isCnt(c[1])?r[c[1]]:Math.round(r[c[1]])))];
+      const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=RCOLS.map((c,i)=>({wch:i?12:24}));X.utils.book_append_sheet(wb,ws,RN[m])});
+    const head=['名稱','品牌','衣櫃','尺寸','狀態','買入日期','買自','幣別','原幣價格','當地運費(原幣)','匯率','商品台幣','國際運費分攤','國內運費分攤','總成本','賣出日期','賣出價','手續費','盈虧','備註'];
+    const det=items.map(i=>{const p=shipParts(i);return [i.name,i.brand||'',i.cat||'',i.size||'',i.status,i.bd||'',i.bw||'',i.cur||'TWD',n(i.bp),n(i.ls),n(i.rate)||1,Math.round(goodsTWD(i)),Math.round(p.intl),Math.round(p.dom),Math.round(costOf(i)),i.sd||'',n(i.sp),n(i.sf),sold(i)?Math.round(plOf(i)):'',i.note||'']});
+    const ws=X.utils.aoa_to_sheet([head,...det]);ws['!cols']=head.map((h,i)=>({wch:i===0?26:i===19?30:12}));X.utils.book_append_sheet(wb,ws,'明細');
+    const out=X.write(wb,{bookType:'xlsx',type:'array'});
+    await saveFile('衣櫥帳本_'+todayS()+'.xlsx',new Blob([out],{type:'application/octet-stream'}));
+  }catch(e){$('rmsg').textContent='無法載入 Excel 工具，請確認網路後再試。'}
+  finally{btn.disabled=false}
+}
+async function exportPdf(){
+  const btn=$('rPdf');btn.disabled=true;$('rmsg').textContent='正在產生 PDF…';
+  try{
+    const {jsPDF}=await lib('pdf');try{await document.fonts.load('16px "Noto Sans TC"')}catch(e){}
+    const {rows,t}=report(rmode),all=[...rows,t];
+    const W=1123,H=794,S=2,M=40,rowH=30,hdrH=34,first=96,cont=50,F='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
+    const colW=[223,...Array(8).fill((W-2*M-223)/8)],cx=i=>M+colW.slice(0,i).reduce((a,b)=>a+b,0);
+    const per0=Math.floor((H-M-first-hdrH)/rowH),perN=Math.floor((H-M-cont-hdrH)/rowH),pages=[];
+    let k=0;pages.push(all.slice(0,per0));k=per0;while(k<all.length){pages.push(all.slice(k,k+perN));k+=perN}
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    pages.forEach((pr,pi)=>{
+      const c=document.createElement('canvas');c.width=W*S;c.height=H*S;const x=c.getContext('2d');x.scale(S,S);x.fillStyle='#fff';x.fillRect(0,0,W,H);
+      let y=cont;
+      if(pi===0){x.fillStyle='#22304a';x.font='700 26px '+F;x.fillText((cfg.title||DEFTITLE)+'｜'+RN[rmode],M,56);x.fillStyle='#6b7a93';x.font='14px '+F;x.fillText('匯出日期 '+todayS()+'　買入依買入日期、賣出依賣出日期、運費依集運單日期統計',M,80);y=first}
+      x.fillStyle='#eef2f9';x.fillRect(M,y,W-2*M,hdrH);x.fillStyle='#22304a';x.font='700 14px '+F;
+      RCOLS.forEach((cl,i)=>{x.textAlign=i?'right':'left';x.fillText(cl[0],i?cx(i)+colW[i]-10:M+10,y+22)});
+      y+=hdrH;
+      pr.forEach(r=>{const tot=r===t;x.font=(tot?'700 ':'')+'14px '+F;
+        RCOLS.forEach((cl,i)=>{const kk=cl[1];x.fillStyle=kk==='pl'?(r.pl>=0?'#2f9e72':'#d9577a'):'#22304a';x.textAlign=i?'right':'left';x.fillText(txt(r,kk),i?cx(i)+colW[i]-10:M+10,y+20)});
+        x.fillStyle=tot?'#22304a':'#dde4ef';x.fillRect(M,y+rowH-1,W-2*M,tot?2:1);y+=rowH});
+      x.fillStyle='#6b7a93';x.font='12px '+F;x.textAlign='right';x.fillText((pi+1)+' / '+pages.length,W-M,H-16);
+      if(pi>0)doc.addPage();doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);
+    });
+    await saveFile('衣櫥帳本_'+RN[rmode]+'_'+todayS()+'.pdf',doc.output('arraybuffer'));
+  }catch(e){$('rmsg').textContent='無法產生 PDF，請確認網路後再試。'}
+  finally{btn.disabled=false}
+}
+$('rXls').onclick=exportXls;$('rPdf').onclick=exportPdf;
+
+/* full backup / restore (includes photos) */
+let lastBk='';
+function bkStatus(){
+  const days=lastBk?Math.floor((Date.now()-Date.parse(lastBk))/864e5):null;
+  $('bkMsg').textContent=lastBk?'上次匯出備份：'+lastBk.slice(0,10)+'（'+days+' 天前）':'還沒有匯出過備份';
+  const w=$('bkWarn');w.style.display=items.length&&(days===null||days>=14)?'':'none';
+  w.textContent=days===null?'⚠ 還沒有備份過。換手機或清除瀏覽器資料會讓紀錄消失，請點這裡到「⚙️ 設定」按「匯出完整備份」。':'⚠ 已經 '+days+' 天沒有備份了，請點這裡到「⚙️ 設定」匯出一次。';
+}
+$('fullBk').onclick=async()=>{
+  const b=$('fullBk');b.disabled=true;$('bkMsg').textContent='正在整理備份…';
+  const used={};items.forEach(i=>{[i.photo,...(i.shots||[])].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]})});[cfg.avatar,cfg.bgImg].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]});
+  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,rates,cats,hid,cfg,imgs:used});
+  const ok=await saveFile('衣櫥帳本備份_'+todayS()+'.json',new Blob([data],{type:'application/json'}),'bkMsg');
+  if(ok){lastBk=new Date().toISOString();await kvSet('meta',{lastBackup:lastBk});bkStatus();$('bkMsg').textContent='已匯出完整備份（'+(data.length/1048576).toFixed(1)+' MB）。請把檔案存到 iCloud、Google Drive，或傳給自己保存。'}
+  b.disabled=false;
+};
+$('fullIn').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('bkMsg');
+  try{
+    const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw 0;
+    if(items.length&&!await yes('這裡目前已有 '+items.length+' 件衣服。匯入會「合併」：備份裡有、這裡沒有的衣服會新增；兩邊都有的衣服以備份檔為準。確定匯入嗎？'))return;
+    const im=new Map(items.map(i=>[i.id,i]));let add=0;
+    a.forEach(i=>{if(!i||!i.id)return;if(im.has(i.id))Object.assign(im.get(i.id),i);else{items.push(i);add++}});
+    if(!Array.isArray(d)){
+      const sm=new Map(ships.map(x=>[x.id,x]));migShips(d.ships||[]).forEach(x=>{if(sm.has(x.id))Object.assign(sm.get(x.id),x);else ships.push(x)});
+      (d.cats||[]).forEach(c=>{if(!cats.includes(c))cats.push(c)});
+      rates={...rates,...(d.rates||{})};
+      if(d.hid)for(const k in d.hid)hid[k]=[...new Set([...(hid[k]||[]),...d.hid[k]])];
+      if(d.cfg)cfg={...cfg,...d.cfg};
+      for(const id in (d.imgs||{})){imgs[id]=d.imgs[id];await kvSet('img:'+id,d.imgs[id])}
+    }
+    await save();applyTheme();render();msg.textContent='匯入完成：備份共 '+a.length+' 件，新增 '+add+' 件。';
+  }catch(err){msg.textContent='這個檔案無法讀取，請確認是「衣櫥帳本備份」的 .json 檔。'}
+};
+
+/* tappable suggestions for size / brand / where bought / where sold */
+let hid={size:[],brand:[],bw:[],sw:[]};
+function drawChips(){
+  document.querySelectorAll('[data-chip]').forEach(box=>{
+    const k=box.dataset.chip,cnt={};
+    items.forEach(i=>{const v=(i[k]||'').trim();if(v&&!(hid[k]||[]).includes(v))cnt[v]=(cnt[v]||0)+1});
+    box.innerHTML=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,24).map(([v])=>`<span class="chip"><button type="button" data-pick="${k}" data-v="${esc(v)}">${esc(v)}</button><button type="button" class="cx" data-hide="${k}" data-v="${esc(v)}" aria-label="移除 ${esc(v)}">✕</button></span>`).join('');
+  });
+}
+$('dlg').addEventListener('click',async e=>{
+  const p=e.target.closest('[data-pick]');
+  if(p){const inp=$('f_'+p.dataset.pick);inp.value=p.dataset.v;inp.dispatchEvent(new Event('input',{bubbles:true}));return}
+  const h=e.target.closest('[data-hide]');
+  if(h){const k=h.dataset.hide;(hid[k]=hid[k]||[]).push(h.dataset.v);await save();drawChips()}
+});
+
+/* appearance: name, photo, background */
+const DEFTITLE='女兒的小衣櫥';
+const DEFCFG={title:DEFTITLE,avatar:'',bgType:'none',bgVal:'',bgImg:''};
+let cfg={...DEFCFG};
+const svgU=s=>'url("data:image/svg+xml,'+encodeURIComponent(s)+'")';
+const PAT={
+ dot:{n:'圓點',img:()=>'radial-gradient(rgba(120,140,190,.35) 2px,transparent 2.5px)',size:'22px 22px'},
+ stripe:{n:'斜紋',img:()=>'repeating-linear-gradient(45deg,rgba(120,140,190,.22) 0 8px,transparent 8px 18px)',size:'auto'},
+ grid:{n:'格紋',img:()=>'linear-gradient(rgba(120,140,190,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(120,140,190,.25) 1px,transparent 1px)',size:'24px 24px'},
+ flower:{n:'小花',img:()=>svgU("<svg xmlns='http://www.w3.org/2000/svg' width='56' height='56'><g fill='#f29bb8' fill-opacity='.45'><circle cx='28' cy='17' r='6'/><circle cx='28' cy='39' r='6'/><circle cx='17' cy='28' r='6'/><circle cx='39' cy='28' r='6'/></g><circle cx='28' cy='28' r='4.5' fill='#f5c542' fill-opacity='.7'/></svg>"),size:'56px 56px'},
+ heart:{n:'愛心',img:()=>svgU("<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><path d='M24 36C8 25 11 11 19 11c3 0 5 2 5 4 0-2 2-4 5-4 8 0 11 14-5 25z' fill='#f58aa5' fill-opacity='.4'/></svg>"),size:'48px 48px'},
+ star:{n:'星星',img:()=>svgU("<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><polygon points='24,8 28,19 40,19 30,26 34,38 24,31 14,38 18,26 8,19 20,19' fill='#f5c542' fill-opacity='.45'/></svg>"),size:'48px 48px'}
+};
+const COLORS=['#fde7ef','#e3f0ff','#e6f4ea','#fff4d6','#efe6fb','#ffe9dc','#e9eef5','#2b3347'];
+function applyTheme(){
+  const t=(cfg.title||'').trim()||DEFTITLE;document.title=t;$('ttl').textContent=t;
+  const r=document.documentElement.style;['--page','--bgimg','--bgsize'].forEach(k=>r.removeProperty(k));
+  if(cfg.bgType==='color'&&cfg.bgVal)r.setProperty('--page',cfg.bgVal);
+  else if(cfg.bgType==='pattern'&&PAT[cfg.bgVal]){r.setProperty('--bgimg',PAT[cfg.bgVal].img());r.setProperty('--bgsize',PAT[cfg.bgVal].size)}
+  else if(cfg.bgType==='image'&&imgs[cfg.bgImg]){r.setProperty('--bgimg','linear-gradient(var(--veil),var(--veil)),url("'+imgs[cfg.bgImg]+'")');r.setProperty('--bgsize','auto,cover')}
+  $('av').innerHTML=cfg.avatar&&imgs[cfg.avatar]?'<img src="'+imgs[cfg.avatar]+'" alt="">':'👗';
+}
+async function putImg(file,max,q,old){const d=await shrink(file,max,q);if(!d)return '';const id=uid();imgs[id]=d;await kvSet('img:'+id,d);if(old){delete imgs[old];await kvDel('img:'+old)}return id}
+async function setBg(type,val){
+  if(type==='image')return;
+  if(cfg.bgImg){delete imgs[cfg.bgImg];await kvDel('img:'+cfg.bgImg);cfg.bgImg=''}
+  cfg.bgType=type;cfg.bgVal=val;applyTheme();drawCfg();await save();
+}
+function drawCfg(){
+  $('cfgAv').innerHTML=cfg.avatar&&imgs[cfg.avatar]?'<div class="im"><img src="'+imgs[cfg.avatar]+'" alt=""><button class="x" id="avRm" aria-label="移除">✕</button></div>':'<label class="up">📷<input type="file" accept="image/*" id="avIn"></label>';
+  const ai=$('avIn');if(ai)ai.onchange=async e=>{const f=e.target.files[0];if(!f)return;const id=await putImg(f,256,.8,cfg.avatar);if(id){cfg.avatar=id;applyTheme();drawCfg();await save()}};
+  const ar=$('avRm');if(ar)ar.onclick=async()=>{await kvDel('img:'+cfg.avatar);delete imgs[cfg.avatar];cfg.avatar='';applyTheme();drawCfg();await save()};
+  const box=$('cfgBg');box.innerHTML='';
+  const add=(type,val,label,fn)=>{const b=document.createElement('button');b.type='button';b.className='sw'+(cfg.bgType===type&&cfg.bgVal===val?' sel':'');b.title=label;b.setAttribute('aria-label',label);if(fn)fn(b);b.onclick=()=>setBg(type,val);box.appendChild(b)};
+  add('none','','預設',b=>{b.textContent='無'});
+  COLORS.forEach(c=>add('color',c,'顏色',b=>{b.style.background=c}));
+  if(cfg.bgType==='color'&&cfg.bgVal&&!COLORS.includes(cfg.bgVal))add('color',cfg.bgVal,'自選顏色',b=>{b.style.background=cfg.bgVal});
+  Object.entries(PAT).forEach(([k,p])=>add('pattern',k,p.n,b=>{b.style.backgroundColor='#fff';b.style.backgroundImage=p.img();b.style.backgroundSize=p.size}));
+  if(cfg.bgType==='image'&&imgs[cfg.bgImg]){const b=document.createElement('button');b.type='button';b.className='sw sel';b.title='我的圖片';b.setAttribute('aria-label','我的圖片');b.style.backgroundImage='url("'+imgs[cfg.bgImg]+'")';b.style.backgroundSize='cover';box.appendChild(b)}
+}
+function showPage(p){const st=p==='set';$('homePage').style.display=st?'none':'';$('setPage').style.display=st?'':'none';$('add').style.display=st?'none':'';window.scrollTo(0,0);if(st){$('cfgTitle').value=cfg.title;drawCfg();bkStatus()}}
+$('bCfg').onclick=()=>showPage('set');
+$('bkWarn').style.cursor='pointer';$('bkWarn').onclick=()=>showPage('set');
+$('setBack').onclick=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyTheme();save();showPage('home')};
+$('cfgTitle').oninput=()=>{cfg.title=$('cfgTitle').value;applyTheme()};
+$('cfgTitle').onchange=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyTheme();save()};
+$('cfgBgIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const id=await putImg(f,1200,.7,cfg.bgImg);if(id){cfg.bgType='image';cfg.bgVal='';cfg.bgImg=id;applyTheme();drawCfg();await save()}};
+$('cfgColor').oninput=()=>{cfg.bgType='color';cfg.bgVal=$('cfgColor').value;applyTheme()};
+$('cfgColor').onchange=()=>setBg('color',$('cfgColor').value);
+$('cfgReset').onclick=async()=>{if(!await yes('恢復成預設的名稱、照片與背景？'))return;for(const id of [cfg.avatar,cfg.bgImg])if(id){delete imgs[id];await kvDel('img:'+id)}cfg={...DEFCFG};$('cfgTitle').value=cfg.title;applyTheme();drawCfg();await save()};
+
+/* init */
+(async()=>{
+  const all=await kvAll();
+  if(all.meta&&all.meta.lastBackup)lastBk=all.meta.lastBackup;
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg}}
+  else{try{const r=localStorage.getItem('kids-closet-v1');if(r){items=JSON.parse(r).map(i=>({...i,cur:'TWD',rate:1,shots:[]}));await save()}}catch(e){}}
+  for(const k in all)if(k.startsWith('img:'))imgs[k.slice(4)]=all[k];
+  applyTheme();render();
+})();
+</script>
+<script>if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+</body>
+</html>
