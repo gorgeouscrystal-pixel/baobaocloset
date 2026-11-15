@@ -123,6 +123,12 @@ textarea{min-height:70px}
   <button id="bRate">匯率設定</button>
 </div>
 <div class="stat" style="margin-top:12px">
+  <b style="font-size:1rem">📦 集運運費</b>
+  <p class="meta">每磅費用（台幣）。新增集運單時會自動帶入這個數字，未滿一磅以一磅計費。之後集運公司調價，改這裡就好；已建立的集運單會保留當時的價格，不會被動到。</p>
+  <label>每磅費用 NT$</label><input id="cfgShip" type="number" inputmode="decimal" min="0" step="any">
+  <div class="bar" style="margin-top:8px"><button id="cfgShipAll">套用到所有已建立的集運單</button></div>
+</div>
+<div class="stat" style="margin-top:12px">
   <b style="font-size:1rem">💾 備份與換手機</b>
   <p class="meta">資料和照片只存在這個瀏覽器裡。匯出「完整備份」會得到一個檔案，包含所有衣服、照片、截圖、集運單、匯率和衣櫃。換手機或電腦時，在新裝置打開這個檔案，再按「匯入備份檔」，就不用重新輸入。</p>
   <div class="bar"><button class="p" id="fullBk">匯出完整備份（含照片）</button><label class="filebtn">匯入備份檔<input type="file" id="fullIn" accept=".json,application/json" style="display:none"></label></div>
@@ -145,6 +151,8 @@ textarea{min-height:70px}
     <div><label>尺寸</label><input id="f_size" placeholder="例：110 / 5Y"><div class="chips" data-chip="size"></div></div>
     <div><label>品牌</label><input id="f_brand" list="brands"><datalist id="brands"></datalist><div class="chips" data-chip="brand"></div></div>
     <div><label>買自哪裡</label><input id="f_bw" placeholder="Mercari、eBay、FB 社團…"><div class="chips" data-chip="bw"></div></div>
+    <div><label>購買目的</label><select id="f_purpose"><option value="wear">自己（女兒）穿</option><option value="resale">純粹買來賣</option></select></div>
+    <div><label>穿過嗎</label><select id="f_worn"><option value="no">沒穿過</option><option value="yes">穿過</option></select></div>
     <div><label>所屬衣櫃</label><select id="f_cat"></select></div>
     <div><label>重量（集運分攤用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
     <div class="full sec">購買資料</div>
@@ -196,7 +204,7 @@ textarea{min-height:70px}
 </dialog>
 <script>
 const $=id=>document.getElementById(id);
-const CUR=['TWD','USD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
+const CUR=['USD','TWD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
 const DEF={TWD:1,USD:32,JPY:0.21,KRW:0.023,CNY:4.4,HKD:4.1,EUR:35,GBP:41,AUD:21,CAD:23};
 const STAT=['全部','已購入','待售','已售出','收藏中'];
 let items=[],ships=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
@@ -260,7 +268,7 @@ function render(){bkStatus();
     return `<div class="item" data-id="${i.id}" data-s="${i.status}" tabindex="0">
     ${i.photo&&imgs[i.photo]?`<img class="th" src="${imgs[i.photo]}" alt="">`:'<div class="th">👚</div>'}
     <div class="bd"><div class="row"><span class="name">${esc(i.name)}</span><span class="tag">${i.status}</span></div>
-    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw].filter(Boolean).map(esc).join('・')}</div>
+    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw,i.purpose==='resale'?'買來賣':'',i.worn==='yes'?'穿過':''].filter(Boolean).map(esc).join('・')}</div>
     <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
     `<div class="empty">${items.length?'沒有符合的衣服':'還沒有紀錄，點右下角「新增衣服」開始吧'}</div>`;
 }
@@ -280,7 +288,7 @@ document.addEventListener('click',e=>{
 });
 $('big').onclick=()=>$('big').close();
 /* form */
-const F=['name','status','size','brand','bw','cat','w','wu','cur','rate','bp','ls','bd','ask','sf','sp','sd','sw','note'];
+const F=['name','status','size','brand','bw','cat','w','wu','purpose','worn','cur','rate','bp','ls','bd','ask','sf','sp','sd','sw','note'];
 function fillCats(){$('f_cat').innerHTML='<option value="">（未分類）</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__new">＋ 新增衣櫃…</option>'}
 $('f_cat').onchange=async()=>{if($('f_cat').value==='__new'){const nm=(await ask('新衣櫃名稱')||'').trim();if(nm&&nm!=='未分類'&&!cats.includes(nm)){cats.push(nm);await save()}fillCats();$('f_cat').value=cats.includes(nm)?nm:''}};
 function formCalc(){
@@ -304,18 +312,19 @@ function calc(){
   let h=`商品＋當地運費約 <b>${money(f.g)}</b>${cur!=='TWD'?`（${cur} ${fx} × ${f.r}）`:''}`;
   if(f.c){h+=`<br>集運：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
     if(f.lb<=0)h+='<br><span class="meta">這件沒填重量，目前依平均分攤</span>'}
+  else if(f.lb>0)h+='<br><span class="meta">還沒選所屬集運單，國際運費不會計入。可選「＋ 新增集運單…」</span>';
   h+=`<br>總成本 <b class="buy">${money(f.cost)}</b>`;
   $('calc').innerHTML=h;calc2();
 }
 function openEdit(id){
   editId=id;added=new Set();
-  const it=items.find(i=>i.id===id)||{status:'已購入',brand:view!=='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cat:view==='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cur:'TWD',rate:1,bd:new Date().toISOString().slice(0,10)};
+  const it=items.find(i=>i.id===id)||{status:'已購入',brand:view!=='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cat:view==='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cur:'USD',rate:rates.USD||32,purpose:'wear',worn:'no',bd:new Date().toISOString().slice(0,10)};
   tmp={photo:it.photo||'',shots:[...(it.shots||[])],orig:[it.photo,...(it.shots||[])].filter(Boolean)};
   $('f_cur').innerHTML=CUR.map(c=>`<option>${c}</option>`).join('');
   fillCats();
   $('brands').innerHTML=[...new Set(items.map(i=>(i.brand||'').trim()).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
   $('f_batch').innerHTML='<option value="">（無）</option>'+ships.map(s=>`<option value="${s.id}">${esc(s.name||'未命名')}${s.date?' '+esc(s.date):''}</option>`).join('');
-  F.forEach(k=>{$('f_'+k).value=it[k]??'';$('f_'+k).classList.remove('ai')});$('f_wu').value=it.wu||'磅';$('aiMsg').textContent='會讀取上方截圖，把看得出來的資料填入空白欄位，填完你都可以修改。';$('f_batch').value=it.batch||'';
+  F.forEach(k=>{$('f_'+k).value=it[k]??'';$('f_'+k).classList.remove('ai')});$('f_wu').value=it.wu||'磅';$('f_purpose').value=it.purpose||'wear';$('f_worn').value=it.worn||'no';$('aiMsg').textContent='會讀取上方截圖，把看得出來的資料填入空白欄位，填完你都可以修改。';$('f_batch').insertAdjacentHTML('beforeend','<option value="__ship">＋ 新增集運單…</option>');$('f_batch').value=it.batch||'';
   $('del').style.display=id?'':'none';drawImgs();drawChips();calc();$('dlg').showModal();
 }
 $('f_cur').onchange=()=>{$('f_rate').value=rates[$('f_cur').value]||1;calc()};
@@ -372,7 +381,7 @@ note：狀況、顏色、材質等簡短備註，繁體中文，不超過 40 字
     const filled=[],mark=(k)=>{$('f_'+k).classList.add('ai');filled.push(k)};
     ['name','brand','size','bw','note'].forEach(k=>{const v=String(d[k]??'').trim();if(v&&!$('f_'+k).value.trim()){$('f_'+k).value=v;mark(k)}});
     ['bp','ls'].forEach(k=>{const v=parseFloat(String(d[k]??'').replace(/[^0-9.]/g,''));if(v>0&&!$('f_'+k).value.trim()){$('f_'+k).value=v;mark(k)}});
-    if(CUR.includes(d.cur)&&d.cur!=='TWD'&&$('f_cur').value==='TWD'){$('f_cur').value=d.cur;$('f_rate').value=rates[d.cur]||1;mark('cur');mark('rate')}
+    if(CUR.includes(d.cur)&&d.cur!==$('f_cur').value&&!$('f_bp').value.trim()){$('f_cur').value=d.cur;$('f_rate').value=rates[d.cur]||1;mark('cur');mark('rate')}
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.bd||'')&&$('f_bd').value===new Date().toISOString().slice(0,10)){$('f_bd').value=d.bd;mark('bd')}
     calc();
     msg.textContent=filled.length?`已填入 ${filled.length} 個欄位（橘色框線），請檢查後再儲存。匯率是預設值，記得依實際匯率修改。`:'截圖裡沒找到可填入的資料，或相關欄位已有內容。';
@@ -407,7 +416,7 @@ function drawShips(){
    <div class="sc meta" style="margin-top:8px">${shipSummary(s)}</div><div class="acts"><button data-d="${s.id}">刪除這張集運單</button></div></div>`).join('')||'<div class="empty">還沒有集運單</div>';
 }
 $('bShip').onclick=()=>{drawShips();$('dShip').showModal()};
-$('shAdd').onclick=()=>{const last=ships[ships.length-1];ships.push({id:uid(),name:'',date:new Date().toISOString().slice(0,10),rate:last&&n(last.rate)>0?last.rate:180,dom:'',ow:''});drawShips()};
+$('shAdd').onclick=()=>{const last=ships[ships.length-1];ships.push({id:uid(),name:'',date:new Date().toISOString().slice(0,10),rate:cfg.shipRate||180,dom:'',ow:''});drawShips()};
 $('shl').oninput=e=>{const r=e.target.closest('[data-sid]');if(r&&e.target.dataset.f){const s=ships.find(x=>x.id===r.dataset.sid);s[e.target.dataset.f]=e.target.value;r.querySelector('.sc').innerHTML=shipSummary(s)}};
 $('shl').onclick=async e=>{const b=e.target.closest('[data-d]');if(b&&await yes('刪除這張集運單？衣服紀錄會保留。')){ships=ships.filter(s=>s.id!==b.dataset.d);items.forEach(i=>{if(i.batch===b.dataset.d)i.batch=''});drawShips()}};
 $('sOk').onclick=async()=>{await save();render();$('dShip').close()};
@@ -451,6 +460,7 @@ function drawRep(){
   const {rows,t}=report(rmode);
   const cell=(r,k)=>k==='pl'?`<span class="${cls(r.pl)}">${sgn(r.pl)}</span>`:esc(txt(r,k));
   $('rtab').innerHTML=rows.length?`<table><thead><tr>${RCOLS.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${RCOLS.map(c=>`<td>${cell(r,c[1])}</td>`).join('')}</tr>`).join('')}</tbody><tfoot><tr>${RCOLS.map(c=>`<td>${cell(t,c[1])}</td>`).join('')}</tr></tfoot></table>`:'<div class="empty">還沒有資料</div>';
+  if(items.length)$('rtab').insertAdjacentHTML('beforeend',wornTable());
 }
 $('bRep').onclick=()=>{$('rmsg').textContent='';drawRep();$('dRep').showModal()};
 $('rClose').onclick=()=>$('dRep').close();
@@ -471,37 +481,59 @@ async function exportXls(){
     ['w','m','y'].forEach(m=>{const {rows,t}=report(m);
       const aoa=[RCOLS.map(c=>c[0]),...[...rows,t].map(r=>RCOLS.map(c=>c[1]==='label'||isCnt(c[1])?r[c[1]]:Math.round(r[c[1]])))];
       const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=RCOLS.map((c,i)=>({wch:i?12:24}));X.utils.book_append_sheet(wb,ws,RN[m])});
-    const head=['名稱','品牌','衣櫃','尺寸','狀態','買入日期','買自','幣別','原幣價格','當地運費(原幣)','匯率','商品台幣','國際運費分攤','國內運費分攤','總成本','賣出日期','賣出價','手續費','盈虧','備註'];
-    const det=items.map(i=>{const p=shipParts(i);return [i.name,i.brand||'',i.cat||'',i.size||'',i.status,i.bd||'',i.bw||'',i.cur||'TWD',n(i.bp),n(i.ls),n(i.rate)||1,Math.round(goodsTWD(i)),Math.round(p.intl),Math.round(p.dom),Math.round(costOf(i)),i.sd||'',n(i.sp),n(i.sf),sold(i)?Math.round(plOf(i)):'',i.note||'']});
-    const ws=X.utils.aoa_to_sheet([head,...det]);ws['!cols']=head.map((h,i)=>({wch:i===0?26:i===19?30:12}));X.utils.book_append_sheet(wb,ws,'明細');
+    const head=['名稱','品牌','衣櫃','尺寸','狀態','買入日期','買自','幣別','原幣價格','當地運費(原幣)','匯率','商品台幣','國際運費分攤','國內運費分攤','總成本','賣出日期','賣出價','手續費','盈虧','購買目的','穿過嗎','備註'];
+    const det=items.map(i=>{const p=shipParts(i);return [i.name,i.brand||'',i.cat||'',i.size||'',i.status,i.bd||'',i.bw||'',i.cur||'TWD',n(i.bp),n(i.ls),n(i.rate)||1,Math.round(goodsTWD(i)),Math.round(p.intl),Math.round(p.dom),Math.round(costOf(i)),i.sd||'',n(i.sp),n(i.sf),sold(i)?Math.round(plOf(i)):'',i.purpose==='resale'?'買來賣':'自己穿',i.worn==='yes'?'穿過':'沒穿過',i.note||'']});
+    const ws=X.utils.aoa_to_sheet([head,...det]);ws['!cols']=head.map((h,i)=>({wch:i===0?26:i===21?30:12}));X.utils.book_append_sheet(wb,ws,'明細');
+    {const g=wornGroups(),aoa=[['類別','件數','總成本','已賣出件數','賣出盈虧']];
+      BK.forEach(([nm,k])=>{const t=wornStats(g[k]);aoa.push([nm,t.n,Math.round(t.cost),t.soldN,Math.round(t.pl)])});
+      aoa.push([],['類別','名稱','品牌','尺寸','衣櫃','狀態','總成本','賣出價','盈虧']);
+      BK.forEach(([nm,k])=>g[k].forEach(i=>aoa.push([nm,i.name,i.brand||'',i.size||'',i.cat||'',i.status,Math.round(costOf(i)),n(i.sp)||'',sold(i)?Math.round(plOf(i)):''])));
+      const w=X.utils.aoa_to_sheet(aoa);w['!cols']=[{wch:10},{wch:28},{wch:14},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:12}];X.utils.book_append_sheet(wb,w,'穿著狀況')}
     const out=X.write(wb,{bookType:'xlsx',type:'array'});
     await saveFile('衣櫥帳本_'+todayS()+'.xlsx',new Blob([out],{type:'application/octet-stream'}));
   }catch(e){$('rmsg').textContent='無法載入 Excel 工具，請確認網路後再試。'}
   finally{btn.disabled=false}
 }
+const BK=[['穿過','worn'],['沒穿過','unworn'],['買來賣','resale']];
+function wornGroups(){const g={worn:[],unworn:[],resale:[]};items.forEach(i=>{(i.purpose==='resale'?g.resale:i.worn==='yes'?g.worn:g.unworn).push(i)});return g}
+function wornStats(a){const sl=a.filter(sold);return {n:a.length,cost:a.reduce((t,i)=>t+costOf(i),0),soldN:sl.length,pl:sl.reduce((t,i)=>t+plOf(i),0)}}
+function wornTable(){const g=wornGroups();
+  return `<div class="meta" style="margin:14px 0 4px"><b>穿著狀況</b>（全部衣服，不分期間）</div><table><thead><tr><th>類別</th><th>件數</th><th>總成本</th><th>已賣出件數</th><th>賣出盈虧</th></tr></thead><tbody>${BK.map(([nm,k])=>{const t=wornStats(g[k]);return `<tr><td>${nm}</td><td>${t.n}</td><td>${money(t.cost)}</td><td>${t.soldN}</td><td>${t.soldN?`<span class="${cls(t.pl)}">${sgn(t.pl)}</span>`:'—'}</td></tr>`}).join('')}</tbody></table><p class="meta">「穿過」「沒穿過」是自己穿的衣服；「買來賣」是購買目的標記為「純粹買來賣」的衣服。完整名單在匯出的 Excel 和 PDF 裡。</p>`}
+const PFONT='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
+function pdfPages(title,sub,heads,widths,rows,al){
+  const W=1123,H=794,S=2,M=40,rowH=30,hdrH=34,first=96,cont=50;
+  const cx=i=>M+widths.slice(0,i).reduce((a,b)=>a+b,0);
+  const per0=Math.floor((H-M-first-hdrH)/rowH),perN=Math.floor((H-M-cont-hdrH)/rowH),chunks=[rows.slice(0,per0)];
+  for(let k=per0;k<rows.length;k+=perN)chunks.push(rows.slice(k,k+perN));
+  return chunks.map((pr,pi)=>{
+    const c=document.createElement('canvas');c.width=W*S;c.height=H*S;const x=c.getContext('2d');x.scale(S,S);x.fillStyle='#fff';x.fillRect(0,0,W,H);
+    const put=(t,i,yy)=>{const mw=widths[i]-20;let q=String(t);x.textAlign=al[i]==='r'?'right':'left';if(x.measureText(q).width>mw){while(q.length>1&&x.measureText(q+'…').width>mw)q=q.slice(0,-1);q+='…'}x.fillText(q,al[i]==='r'?cx(i)+widths[i]-10:cx(i)+10,yy)};
+    let y=cont;
+    if(pi===0){x.fillStyle='#22304a';x.font='700 26px '+PFONT;x.textAlign='left';x.fillText(title,M,56);x.fillStyle='#6b7a93';x.font='14px '+PFONT;x.fillText(sub,M,80);y=first}
+    x.fillStyle='#eef2f9';x.fillRect(M,y,W-2*M,hdrH);x.fillStyle='#22304a';x.font='700 14px '+PFONT;
+    heads.forEach((h,i)=>put(h,i,y+22));y+=hdrH;
+    pr.forEach(r=>{x.font=(r.bold?'700 ':'')+'14px '+PFONT;
+      r.cells.forEach((t,i)=>{x.fillStyle=(r.col&&r.col[i])||'#22304a';put(t,i,y+20)});
+      x.fillStyle=r.bold?'#22304a':'#dde4ef';x.fillRect(M,y+rowH-1,W-2*M,r.bold?2:1);y+=rowH});
+    x.fillStyle='#6b7a93';x.font='12px '+PFONT;x.textAlign='right';x.fillText((pi+1)+' / '+chunks.length,W-M,H-16);
+    return c;
+  });
+}
 async function exportPdf(){
   const btn=$('rPdf');btn.disabled=true;$('rmsg').textContent='正在產生 PDF…';
   try{
     const {jsPDF}=await lib('pdf');try{await document.fonts.load('16px "Noto Sans TC"')}catch(e){}
+    const T=cfg.title||DEFTITLE,GR='#2f9e72',RD='#d9577a';
     const {rows,t}=report(rmode),all=[...rows,t];
-    const W=1123,H=794,S=2,M=40,rowH=30,hdrH=34,first=96,cont=50,F='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
-    const colW=[223,...Array(8).fill((W-2*M-223)/8)],cx=i=>M+colW.slice(0,i).reduce((a,b)=>a+b,0);
-    const per0=Math.floor((H-M-first-hdrH)/rowH),perN=Math.floor((H-M-cont-hdrH)/rowH),pages=[];
-    let k=0;pages.push(all.slice(0,per0));k=per0;while(k<all.length){pages.push(all.slice(k,k+perN));k+=perN}
+    const rrows=all.map(r=>({cells:RCOLS.map(c=>txt(r,c[1])),bold:r===t,col:{8:r.pl>=0?GR:RD}}));
+    const sec1=pdfPages(T+'｜'+RN[rmode],'匯出日期 '+todayS()+'　買入依買入日期、賣出依賣出日期、運費依集運單日期統計',RCOLS.map(c=>c[0]),[223,...Array(8).fill((1043-223)/8)],rrows,['l',...Array(8).fill('r')]);
+    const g=wornGroups();
+    const srows=BK.map(([nm,k])=>{const q=wornStats(g[k]);return {cells:[nm,String(q.n),money(q.cost),String(q.soldN),q.soldN?sgn(q.pl):'—'],col:{4:q.pl>=0?GR:RD}}});
+    const sec2=pdfPages(T+'｜穿著狀況','穿過、沒穿過、買來賣的件數與成本（全部衣服，不分期間）',['類別','件數','總成本','已賣出件數','賣出盈虧'],[240,150,200,200,200],srows,['l','r','r','r','r']);
+    const lrows=[];BK.forEach(([nm,k])=>g[k].slice().sort((a,b)=>String(a.name).localeCompare(String(b.name))).forEach(i=>lrows.push({cells:[nm,i.name||'',i.brand||'',i.size||'',i.cat||'',i.status,money(costOf(i)),i.sp?money(n(i.sp)):'',sold(i)?sgn(plOf(i)):''],col:{8:plOf(i)>=0?GR:RD}})));
+    const sec3=lrows.length?pdfPages(T+'｜穿著狀況明細','依 穿過、沒穿過、買來賣 分組',['類別','名稱','品牌','尺寸','衣櫃','狀態','總成本','賣出價','盈虧'],[80,280,120,70,100,80,100,100,100],lrows,['l','l','l','l','l','l','r','r','r']):[];
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    pages.forEach((pr,pi)=>{
-      const c=document.createElement('canvas');c.width=W*S;c.height=H*S;const x=c.getContext('2d');x.scale(S,S);x.fillStyle='#fff';x.fillRect(0,0,W,H);
-      let y=cont;
-      if(pi===0){x.fillStyle='#22304a';x.font='700 26px '+F;x.fillText((cfg.title||DEFTITLE)+'｜'+RN[rmode],M,56);x.fillStyle='#6b7a93';x.font='14px '+F;x.fillText('匯出日期 '+todayS()+'　買入依買入日期、賣出依賣出日期、運費依集運單日期統計',M,80);y=first}
-      x.fillStyle='#eef2f9';x.fillRect(M,y,W-2*M,hdrH);x.fillStyle='#22304a';x.font='700 14px '+F;
-      RCOLS.forEach((cl,i)=>{x.textAlign=i?'right':'left';x.fillText(cl[0],i?cx(i)+colW[i]-10:M+10,y+22)});
-      y+=hdrH;
-      pr.forEach(r=>{const tot=r===t;x.font=(tot?'700 ':'')+'14px '+F;
-        RCOLS.forEach((cl,i)=>{const kk=cl[1];x.fillStyle=kk==='pl'?(r.pl>=0?'#2f9e72':'#d9577a'):'#22304a';x.textAlign=i?'right':'left';x.fillText(txt(r,kk),i?cx(i)+colW[i]-10:M+10,y+20)});
-        x.fillStyle=tot?'#22304a':'#dde4ef';x.fillRect(M,y+rowH-1,W-2*M,tot?2:1);y+=rowH});
-      x.fillStyle='#6b7a93';x.font='12px '+F;x.textAlign='right';x.fillText((pi+1)+' / '+pages.length,W-M,H-16);
-      if(pi>0)doc.addPage();doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210);
-    });
+    [...sec1,...sec2,...sec3].forEach((c,i)=>{if(i)doc.addPage();doc.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210)});
     await saveFile('衣櫥帳本_'+RN[rmode]+'_'+todayS()+'.pdf',doc.output('arraybuffer'));
   }catch(e){$('rmsg').textContent='無法產生 PDF，請確認網路後再試。'}
   finally{btn.disabled=false}
@@ -561,7 +593,7 @@ $('dlg').addEventListener('click',async e=>{
 
 /* appearance: name, photo, background */
 const DEFTITLE='女兒的小衣櫥';
-const DEFCFG={title:DEFTITLE,avatar:'',bgType:'none',bgVal:'',bgImg:''};
+const DEFCFG={title:DEFTITLE,avatar:'',bgType:'none',bgVal:'',bgImg:'',shipRate:180};
 let cfg={...DEFCFG};
 const svgU=s=>'url("data:image/svg+xml,'+encodeURIComponent(s)+'")';
 const PAT={
@@ -599,7 +631,7 @@ function drawCfg(){
   Object.entries(PAT).forEach(([k,p])=>add('pattern',k,p.n,b=>{b.style.backgroundColor='#fff';b.style.backgroundImage=p.img();b.style.backgroundSize=p.size}));
   if(cfg.bgType==='image'&&imgs[cfg.bgImg]){const b=document.createElement('button');b.type='button';b.className='sw sel';b.title='我的圖片';b.setAttribute('aria-label','我的圖片');b.style.backgroundImage='url("'+imgs[cfg.bgImg]+'")';b.style.backgroundSize='cover';box.appendChild(b)}
 }
-function showPage(p){const st=p==='set';$('homePage').style.display=st?'none':'';$('setPage').style.display=st?'':'none';$('add').style.display=st?'none':'';window.scrollTo(0,0);if(st){$('cfgTitle').value=cfg.title;drawCfg();bkStatus()}}
+function showPage(p){const st=p==='set';$('homePage').style.display=st?'none':'';$('setPage').style.display=st?'':'none';$('add').style.display=st?'none':'';window.scrollTo(0,0);if(st){$('cfgTitle').value=cfg.title;$('cfgShip').value=cfg.shipRate||180;drawCfg();bkStatus()}}
 $('bCfg').onclick=()=>showPage('set');
 $('bkWarn').style.cursor='pointer';$('bkWarn').onclick=()=>showPage('set');
 $('setBack').onclick=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyTheme();save();showPage('home')};
@@ -608,7 +640,26 @@ $('cfgTitle').onchange=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyThem
 $('cfgBgIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const id=await putImg(f,1200,.7,cfg.bgImg);if(id){cfg.bgType='image';cfg.bgVal='';cfg.bgImg=id;applyTheme();drawCfg();await save()}};
 $('cfgColor').oninput=()=>{cfg.bgType='color';cfg.bgVal=$('cfgColor').value;applyTheme()};
 $('cfgColor').onchange=()=>setBg('color',$('cfgColor').value);
-$('cfgReset').onclick=async()=>{if(!await yes('恢復成預設的名稱、照片與背景？'))return;for(const id of [cfg.avatar,cfg.bgImg])if(id){delete imgs[id];await kvDel('img:'+id)}cfg={...DEFCFG};$('cfgTitle').value=cfg.title;applyTheme();drawCfg();await save()};
+$('cfgReset').onclick=async()=>{if(!await yes('恢復成預設的名稱、照片與背景？'))return;for(const id of [cfg.avatar,cfg.bgImg])if(id){delete imgs[id];await kvDel('img:'+id)}cfg={...DEFCFG,shipRate:cfg.shipRate};$('cfgTitle').value=cfg.title;applyTheme();drawCfg();await save()};
+
+/* shipping rate setting + quick add shipment */
+$('cfgShip').onchange=()=>{const v=n($('cfgShip').value);cfg.shipRate=v>0?v:180;$('cfgShip').value=cfg.shipRate;save()};
+$('cfgShipAll').onclick=async()=>{
+  if(!ships.length){await say('目前還沒有集運單。');return}
+  if(!await yes('把全部 '+ships.length+' 張集運單的每磅費用都改成 NT$'+cfg.shipRate+'？已經算好的成本和報表會跟著變動。'))return;
+  ships.forEach(x=>{x.rate=cfg.shipRate});await save();render();await say('已更新。');
+};
+$('f_batch').onchange=async()=>{
+  if($('f_batch').value==='__ship'){
+    const nm=await ask('新集運單的名稱（例：11 月集運）','');
+    if(nm===null){$('f_batch').value='';calc();return}
+    const x={id:uid(),name:nm.trim(),date:new Date().toISOString().slice(0,10),rate:cfg.shipRate||180,dom:'',ow:''};
+    ships.push(x);await save();
+    $('f_batch').innerHTML='<option value="">（無）</option>'+ships.map(q=>`<option value="${q.id}">${esc(q.name||'未命名')}${q.date?' '+esc(q.date):''}</option>`).join('')+'<option value="__ship">＋ 新增集運單…</option>';
+    $('f_batch').value=x.id;
+  }
+  calc();
+};
 
 /* init */
 (async()=>{
