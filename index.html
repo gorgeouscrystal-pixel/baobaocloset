@@ -65,6 +65,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .av{width:56px;height:56px;min-height:0;border-radius:50%;padding:0;overflow:hidden;font-size:1.6rem;flex:none;background:var(--line)}.av img{width:100%;height:100%;object-fit:cover;display:block}
 .swatches{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}.sw{width:46px;height:46px;min-height:0;padding:0;border-radius:12px;font-size:.78rem}.sw.sel{outline:3px solid var(--acc);outline-offset:2px}
 details{background:var(--card);border-radius:12px;padding:10px 14px}.empty{background:var(--card);border-radius:12px}
+.orow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}
 .empty{text-align:center;color:var(--sub);padding:40px 10px}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:99px;padding:12px 22px}
 dialog{border:none;border-radius:16px;padding:18px;width:min(580px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
@@ -102,7 +103,7 @@ textarea{min-height:70px}
   <div class="stat"><small>淨支出（花費－實收）</small><b id="sNet"></b></div>
   <div class="stat"><small>其中運費（國際＋國內）</small><b class="buy" id="sShip"></b></div>
 </div>
-<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip">📦 集運單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
+<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
 <div id="brandView"></div>
 <div id="itemView"><div id="bhead"></div><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="margin-bottom:10px"><div class="tabs" id="tabs"></div><div id="list"></div></div>
 
@@ -124,7 +125,7 @@ textarea{min-height:70px}
 </div>
 <div class="stat" style="margin-top:12px">
   <b style="font-size:1rem">📦 集運運費</b>
-  <p class="meta">每磅費用（台幣）。新增集運單時會自動帶入這個數字，未滿一磅以一磅計費。之後集運公司調價，改這裡就好；已建立的集運單會保留當時的價格，不會被動到。</p>
+  <p class="meta">每磅費用（台幣）。在衣服表單填「重量」，就會用這個費用自動算國際運費（重量 × 每磅費用）。每件衣服儲存時會記住當時的費用，之後調價不會動到舊的衣服。集運單是選用功能，用到時也會帶入這個費用。</p>
   <label>每磅費用 NT$</label><input id="cfgShip" type="number" inputmode="decimal" min="0" step="any">
   <div class="bar" style="margin-top:8px"><button id="cfgShipAll">套用到所有已建立的集運單</button></div>
 </div>
@@ -154,7 +155,7 @@ textarea{min-height:70px}
     <div><label>購買目的</label><select id="f_purpose"><option value="wear">自己（女兒）穿</option><option value="resale">純粹買來賣</option></select></div>
     <div><label>穿過嗎</label><select id="f_worn"><option value="no">沒穿過</option><option value="yes">穿過</option></select></div>
     <div><label>所屬衣櫃</label><select id="f_cat"></select></div>
-    <div><label>重量（集運分攤用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
+    <div><label>重量（算國際運費用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
     <div class="full sec">購買資料</div>
     <div><label>幣別</label><select id="f_cur"></select></div>
     <div><label>匯率（1 單位 = 幾元台幣）</label><input id="f_rate" type="number" inputmode="decimal" step="any" min="0"></div>
@@ -162,6 +163,10 @@ textarea{min-height:70px}
     <div><label>賣家當地運費／平台費（原幣）</label><input id="f_ls" type="number" inputmode="decimal" step="any" min="0"></div>
     <div><label>買入日期</label><input id="f_bd" type="date"></div>
     <div><label>所屬集運單</label><select id="f_batch"></select></div>
+    <div><label>所屬訂單（同賣家合購）</label><select id="f_order"></select></div>
+    <div><label>每磅集運費 NT$</label><input id="f_srate" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div><label>國際運費 NT$（留空＝重量×每磅）</label><input id="f_intl" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div><label>國內運費 NT$</label><input id="f_dom" type="number" inputmode="decimal" min="0" step="any"></div>
     <div class="full calc" id="calc"></div>
     <div class="full"><label>購買截圖</label><div class="imgs" id="shWrap"></div></div>
     <div class="full" id="aiRow" style="display:none"><button type="button" class="p" id="aiBtn">✨ 用截圖自動填入</button><div class="aimsg" id="aiMsg"></div></div>
@@ -193,6 +198,12 @@ textarea{min-height:70px}
 </dialog>
 <dialog id="big"><img id="bigImg" alt="放大檢視"></dialog>
 
+<dialog id="dOrd">
+  <div class="sec" style="margin-bottom:8px">訂單（同賣家合購）</div>
+  <p class="meta">同一個賣家一次買多件、運費共用時，建立一張訂單。每件衣服各自填價格和賣出價，共同運費會分攤到各件，這裡可以看整張訂單合併的盈虧。衣服要在表單的「所屬訂單」選這張訂單。</p>
+  <div id="ordl"></div><button id="ordAdd">＋ 新增訂單</button>
+  <div class="acts"><button class="p" id="ordOk">完成</button></div>
+</dialog>
 <dialog id="dAsk"><div id="askMsg" style="margin-bottom:10px;white-space:pre-wrap"></div><input id="askIn"><div class="acts"><button id="askNo">取消</button><button class="p" id="askOk">確定</button></div></dialog>
 <dialog id="dRep">
   <div class="sec" style="margin-bottom:8px">買賣與花費報表</div>
@@ -206,14 +217,14 @@ textarea{min-height:70px}
 const $=id=>document.getElementById(id);
 const CUR=['USD','TWD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
 const DEF={TWD:1,USD:32,JPY:0.21,KRW:0.023,CNY:4.4,HKD:4.1,EUR:35,GBP:41,AUD:21,CAD:23};
-const STAT=['全部','已購入','待售','已售出','收藏中'];
-let items=[],ships=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
+const STAT=['全部','已購入','待售','已售出','收藏中','未填價格','未算運費'];
+let items=[],ships=[],orders=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
 /* storage: IndexedDB with in-memory fallback */
 const dbp=new Promise(r=>{try{const q=indexedDB.open('closet',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
 async function kvSet(k,v){const d=await dbp;if(!d)return;return new Promise(r=>{try{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
 async function kvDel(k){const d=await dbp;if(!d)return;try{d.transaction('kv','readwrite').objectStore('kv').delete(k)}catch(e){}}
 async function kvAll(){const d=await dbp;if(!d)return{};return new Promise(r=>{const o={};try{const c=d.transaction('kv').objectStore('kv').openCursor();c.onsuccess=()=>{const x=c.result;if(x){o[x.key]=x.value;x.continue()}else r(o)};c.onerror=()=>r(o)}catch(e){r(o)}})}
-const save=()=>kvSet('data',{items,ships,rates,cats,hid,cfg});
+const save=()=>kvSet('data',{items,ships,orders,rates,cats,hid,cfg});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const n=v=>Number(v)||0;
 const money=v=>'NT$'+Math.round(v).toLocaleString('zh-TW');
@@ -231,9 +242,26 @@ function shipCalc(sid,extra){
   return {s,list,sum,all,actual,billed,intl,dom,total:intl+dom};
 }
 const shareOf=(c,lb)=>!c.list.length?0:(c.all?lb/c.sum:1/c.list.length);
-function shipParts(i){const c=i.batch?shipCalc(i.batch):null;if(!c)return {intl:0,dom:0,blb:0};const sh=shareOf(c,wlb(i));return {intl:c.intl*sh,dom:c.dom*sh,blb:c.billed*sh}}
+function shipParts(i){
+  const c=i.batch?shipCalc(i.batch):null;
+  if(c){const sh=shareOf(c,wlb(i));return {intl:c.intl*sh,dom:c.dom*sh+n(i.dom),blb:c.billed*sh}}
+  const sr=n(i.srate)||cfg.shipRate||180,m=n(i.intl);
+  return {intl:m>0?m:wlb(i)*sr,dom:n(i.dom),blb:wlb(i)};
+}
 const shipOf=i=>{const p=shipParts(i);return p.intl+p.dom};
-const goodsTWD=i=>(n(i.bp)+n(i.ls))*(n(i.rate)||1);
+const directShip=i=>{const c=i.batch?shipCalc(i.batch):null;if(c)return n(i.dom);const p=shipParts(i);return p.intl+p.dom};
+const noPrice=i=>String(i.bp??'').trim()==='';
+const shipDone=i=>shipOf(i)>0||String(i.intl??'').trim()==='0';
+function tabMatch(i,t){return t==='全部'||(t==='未填價格'?noPrice(i):t==='未算運費'?!shipDone(i):i.status===t)}
+function orderCalc(oid,extra){
+  const o=orders.find(x=>x.id===oid);if(!o)return null;
+  let list=items.filter(x=>x.order===oid).map(x=>({id:x.id,v:n(x.bp)*(n(x.rate)||1)}));
+  if(extra){list=list.filter(x=>x.id!==extra.id);list.push(extra)}
+  return {o,list,tot:n(o.ls)*(n(o.rate)||1),sum:list.reduce((a,x)=>a+x.v,0)};
+}
+const orderShareOf=(c,v)=>!c||!c.list.length?0:(c.o.split==='price'&&c.sum>0?c.tot*v/c.sum:c.tot/c.list.length);
+const orderShare=i=>{const c=i.order?orderCalc(i.order):null;return c?orderShareOf(c,n(i.bp)*(n(i.rate)||1)):0};
+const goodsTWD=i=>(n(i.bp)+n(i.ls))*(n(i.rate)||1)+orderShare(i);
 const costOf=i=>goodsTWD(i)+shipOf(i);const sold=i=>i.status==='已售出';const plOf=i=>n(i.sp)-n(i.sf)-costOf(i);
 const sgn=v=>(Math.round(v)>0?'+':Math.round(v)<0?'−':'')+money(Math.abs(v));const cls=v=>v>=0?'pos':'neg';
 const bname=i=>(i.brand||'').trim()||'未分類';
@@ -252,7 +280,7 @@ function drawGroups(){
     ${b!=='未分類'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="pen" data-ren="${esc(b)}">✏️ 改名</button>${view==='cat'?`<button class="pen" data-del="${esc(b)}">🗑 刪除衣櫃</button>`:''}</div>`:''}</div>`}).join(''):'<div class="empty">還沒有紀錄，點右下角「新增衣服」開始吧</div>');
 }
 function render(){bkStatus();
-  const goods=items.reduce((a,i)=>a+goodsTWD(i),0),ship=ships.reduce((a,s)=>a+shipCalc(s.id).total,0),sl=items.filter(sold);
+  const goods=items.reduce((a,i)=>a+goodsTWD(i),0),ship=ships.reduce((a,s)=>a+shipCalc(s.id).total,0)+items.reduce((a,i)=>a+directShip(i),0),sl=items.filter(sold);
   const sell=sl.reduce((a,i)=>a+n(i.sp)-n(i.sf),0),pl=sl.reduce((a,i)=>a+plOf(i),0);
   $('sCnt').textContent=items.length+' 件 / '+sl.length+' 件';$('sSpend').textContent=money(goods+ship);$('sShip').textContent=money(ship);$('sSell').textContent=money(sell);
   $('sPL').textContent=sgn(pl);$('sPL').className=cls(pl);$('sNet').textContent=sgn(goods+ship-sell).replace('+','');
@@ -261,15 +289,15 @@ function render(){bkStatus();
   $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(curBrand)}</b></div>`:'';
   if(bv)drawGroups();
   const pool=curBrand?items.filter(i=>gkey(i)===curBrand):items;
-  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s} ${s==='全部'?pool.length:pool.filter(i=>i.status===s).length}</button>`).join('');
+  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
   const q=$('q').value.trim().toLowerCase();
-  const list=items.filter(i=>(!curBrand||gkey(i)===curBrand)&&(filter==='全部'||i.status===filter)&&(!q||[i.name,i.brand,i.cat,i.size,i.note,i.bw,i.sw].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
+  const list=items.filter(i=>(!curBrand||gkey(i)===curBrand)&&tabMatch(i,filter)&&(!q||[i.name,i.brand,i.cat,i.size,i.note,i.bw,i.sw].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
   $('list').innerHTML=list.length?list.map(i=>{const g=goodsTWD(i),sh=shipOf(i),foreign=i.cur&&i.cur!=='TWD';
     return `<div class="item" data-id="${i.id}" data-s="${i.status}" tabindex="0">
     ${i.photo&&imgs[i.photo]?`<img class="th" src="${imgs[i.photo]}" alt="">`:'<div class="th">👚</div>'}
     <div class="bd"><div class="row"><span class="name">${esc(i.name)}</span><span class="tag">${i.status}</span></div>
-    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw,i.purpose==='resale'?'買來賣':'',i.worn==='yes'?'穿過':''].filter(Boolean).map(esc).join('・')}</div>
-    <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
+    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw,i.purpose==='resale'?'買來賣':'',i.worn==='yes'?'穿過':'',i.order?('訂單：'+((orders.find(x=>x.id===i.order)||{}).name||'未命名')):''].filter(Boolean).map(esc).join('・')}</div>
+    <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:'<span class="neg">未填購入價格</span>'}${!noPrice(i)&&!shipDone(i)?' <span class="neg">未算運費</span>':''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
     `<div class="empty">${items.length?'沒有符合的衣服':'還沒有紀錄，點右下角「新增衣服」開始吧'}</div>`;
 }
 /* images */
@@ -288,15 +316,19 @@ document.addEventListener('click',e=>{
 });
 $('big').onclick=()=>$('big').close();
 /* form */
-const F=['name','status','size','brand','bw','cat','w','wu','purpose','worn','cur','rate','bp','ls','bd','ask','sf','sp','sd','sw','note'];
+const F=['name','status','size','brand','bw','cat','w','wu','purpose','worn','srate','intl','dom','order','cur','rate','bp','ls','bd','ask','sf','sp','sd','sw','note'];
 function fillCats(){$('f_cat').innerHTML='<option value="">（未分類）</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__new">＋ 新增衣櫃…</option>'}
 $('f_cat').onchange=async()=>{if($('f_cat').value==='__new'){const nm=(await ask('新衣櫃名稱')||'').trim();if(nm&&nm!=='未分類'&&!cats.includes(nm)){cats.push(nm);await save()}fillCats();$('f_cat').value=cats.includes(nm)?nm:''}};
 function formCalc(){
   const r=n($('f_rate').value)||1,g=(n($('f_bp').value)+n($('f_ls').value))*r;
   const lb=n($('f_w').value)*({'磅':1,'公斤':2.20462,'克':0.00220462}[$('f_wu').value]||1);
-  const bid=$('f_batch').value,c=bid?shipCalc(bid,{id:editId||'__cur',lb}):null;
-  let intl=0,dom=0,blb=0;if(c){const sh=shareOf(c,lb);intl=c.intl*sh;dom=c.dom*sh;blb=c.billed*sh}
-  return {r,g,lb,c,intl,dom,blb,cost:g+intl+dom};
+  const bid=$('f_batch').value,c=bid&&bid!=='__ship'?shipCalc(bid,{id:editId||'__cur',lb}):null;
+  const sr=n($('f_srate').value)||cfg.shipRate||180,manual=n($('f_intl').value),dom0=n($('f_dom').value);
+  let intl=0,dom=0,blb=0;
+  if(c){const sh=shareOf(c,lb);intl=c.intl*sh;dom=c.dom*sh+dom0;blb=c.billed*sh}
+  else{intl=manual>0?manual:lb*sr;dom=dom0;blb=lb}
+  const bp0=n($('f_bp').value)*r,oid=$('f_order').value,oc=oid&&oid!=='__order'?orderCalc(oid,{id:editId||'__cur',v:bp0}):null,osh=oc?orderShareOf(oc,bp0):0;
+  return {r,g,lb,c,sr,manual,intl,dom,blb,oc,osh,cost:g+osh+intl+dom};
 }
 function calc2(){
   const f=formCalc(),cost=f.cost,sf=n($('f_sf').value),ask=n($('f_ask').value),sp=n($('f_sp').value),base=cost+sf,pr=m=>Math.ceil((cost*m+sf)/10)*10;
@@ -310,31 +342,34 @@ $('calc2').onclick=e=>{const b=e.target.closest('[data-ask]');if(b){$('f_ask').v
 function calc(){
   const f=formCalc(),cur=$('f_cur').value,fx=n($('f_bp').value)+n($('f_ls').value);
   let h=`商品＋當地運費約 <b>${money(f.g)}</b>${cur!=='TWD'?`（${cur} ${fx} × ${f.r}）`:''}`;
-  if(f.c){h+=`<br>集運：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
+  if(f.oc)h+=f.oc.tot>0?`<br>同訂單共同運費分攤 <b>${money(f.osh)}</b>`:'<br><span class="meta">這張訂單還沒填共同運費，請到「🛒 訂單」填寫</span>';
+  if(f.c){h+=`<br>集運單：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
     if(f.lb<=0)h+='<br><span class="meta">這件沒填重量，目前依平均分攤</span>'}
-  else if(f.lb>0)h+='<br><span class="meta">還沒選所屬集運單，國際運費不會計入。可選「＋ 新增集運單…」</span>';
+  else if(f.intl>0||f.dom>0)h+=`<br>國際運費 <b>${money(f.intl)}</b>${f.manual>0?'（手動填寫）':`（${+f.lb.toFixed(2)} 磅 × NT$${f.sr}）`}＋國內運費 <b>${money(f.dom)}</b>`;
+  else h+='<br><span class="meta">還沒算運費：填「重量」就會自動算國際運費</span>';
   h+=`<br>總成本 <b class="buy">${money(f.cost)}</b>`;
   $('calc').innerHTML=h;calc2();
 }
 function openEdit(id){
   editId=id;added=new Set();
-  const it=items.find(i=>i.id===id)||{status:'已購入',brand:view!=='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cat:view==='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cur:'USD',rate:rates.USD||32,purpose:'wear',worn:'no',bd:new Date().toISOString().slice(0,10)};
+  const it=items.find(i=>i.id===id)||{status:'已購入',brand:view!=='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cat:view==='cat'&&curBrand&&curBrand!=='未分類'?curBrand:'',cur:'USD',rate:rates.USD||32,srate:cfg.shipRate||180,purpose:'wear',worn:'no',bd:new Date().toISOString().slice(0,10)};
   tmp={photo:it.photo||'',shots:[...(it.shots||[])],orig:[it.photo,...(it.shots||[])].filter(Boolean)};
   $('f_cur').innerHTML=CUR.map(c=>`<option>${c}</option>`).join('');
-  fillCats();
+  fillCats();fillOrders();
   $('brands').innerHTML=[...new Set(items.map(i=>(i.brand||'').trim()).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join('');
   $('f_batch').innerHTML='<option value="">（無）</option>'+ships.map(s=>`<option value="${s.id}">${esc(s.name||'未命名')}${s.date?' '+esc(s.date):''}</option>`).join('');
   F.forEach(k=>{$('f_'+k).value=it[k]??'';$('f_'+k).classList.remove('ai')});$('f_wu').value=it.wu||'磅';$('f_purpose').value=it.purpose||'wear';$('f_worn').value=it.worn||'no';$('aiMsg').textContent='會讀取上方截圖，把看得出來的資料填入空白欄位，填完你都可以修改。';$('f_batch').insertAdjacentHTML('beforeend','<option value="__ship">＋ 新增集運單…</option>');$('f_batch').value=it.batch||'';
   $('del').style.display=id?'':'none';drawImgs();drawChips();calc();$('dlg').showModal();
 }
 $('f_cur').onchange=()=>{$('f_rate').value=rates[$('f_cur').value]||1;calc()};
-['f_rate','f_bp','f_ls','f_batch','f_ask','f_sf','f_sp','f_w','f_wu'].forEach(k=>{$(k).oninput=calc;$(k).onchange=calc});
+['f_rate','f_bp','f_ls','f_batch','f_ask','f_sf','f_sp','f_w','f_wu','f_srate','f_intl','f_dom','f_order'].forEach(k=>{$(k).oninput=calc;$(k).onchange=calc});
 $('add').onclick=()=>openEdit(null);
 $('cancel').onclick=()=>{added.forEach(id=>delete imgs[id]);$('dlg').close()};
 $('dlg').addEventListener('cancel',()=>added.forEach(id=>delete imgs[id]));
 $('save').onclick=async()=>{
   if(!$('f_name').value.trim()){$('f_name').focus();return}
   const o={};F.forEach(k=>o[k]=$('f_'+k).value.trim());
+  if(!o.srate)o.srate=String(cfg.shipRate||180);
   ['size','brand','bw','sw'].forEach(k=>{if(o[k]&&hid[k])hid[k]=hid[k].filter(x=>x!==o[k])});
   o.batch=$('f_batch').value;o.photo=tmp.photo;o.shots=tmp.shots;
   if(o.sp&&(o.status==='已購入'||o.status==='待售'))o.status='已售出';
@@ -421,10 +456,10 @@ $('shl').oninput=e=>{const r=e.target.closest('[data-sid]');if(r&&e.target.datas
 $('shl').onclick=async e=>{const b=e.target.closest('[data-d]');if(b&&await yes('刪除這張集運單？衣服紀錄會保留。')){ships=ships.filter(s=>s.id!==b.dataset.d);items.forEach(i=>{if(i.batch===b.dataset.d)i.batch=''});drawShips()}};
 $('sOk').onclick=async()=>{await save();render();$('dShip').close()};
 /* backup */
-$('bk').onclick=async()=>{const t=JSON.stringify({items:items.map(i=>({...i,photo:'',shots:[]})),ships,rates,cats});$('io').value=t;
+$('bk').onclick=async()=>{const t=JSON.stringify({items:items.map(i=>({...i,photo:'',shots:[]})),ships,orders,rates,cats});$('io').value=t;
   try{await navigator.clipboard.writeText(t);$('bk').textContent='已複製 ✓'}catch(e){$('io').select();$('bk').textContent='請手動複製上方文字'}setTimeout(()=>$('bk').textContent='複製備份文字',2500)};
 $('rs').onclick=async()=>{try{const d=JSON.parse($('io').value);const a=Array.isArray(d)?d:d.items;if(!Array.isArray(a))throw 0;
-  if(await yes('這會用備份取代目前所有文字資料（照片會遺失），確定嗎？')){items=a;ships=migShips(d.ships||[]);rates={...DEF,...(d.rates||{})};if(Array.isArray(d.cats))cats=d.cats;await save();render();$('io').value=''}}catch(e){await say('備份文字格式不正確，請重新複製完整內容。')}};
+  if(await yes('這會用備份取代目前所有文字資料（照片會遺失），確定嗎？')){items=a;ships=migShips(d.ships||[]);orders=Array.isArray(d.orders)?d.orders:[];rates={...DEF,...(d.rates||{})};if(Array.isArray(d.cats))cats=d.cats;await save();render();$('io').value=''}}catch(e){await say('備份文字格式不正確，請重新複製完整內容。')}};
 /* in-page dialogs (native prompt/confirm/alert are blocked in published pages) */
 function dlgAsk(msg,def,mode){return new Promise(res=>{const d=$('dAsk'),inp=$('askIn');let done=false;
   $('askMsg').textContent=msg;inp.style.display=mode==='input'?'':'none';inp.value=def||'';$('askNo').style.display=mode==='say'?'none':'';
@@ -444,7 +479,7 @@ function pkey(ds,m){if(!/^\d{4}-\d{2}-\d{2}$/.test(ds||''))return null;if(m==='y
 function plabel(k,m){if(m!=='w')return k;const d=new Date(k+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+6);return k+' ～ '+d.toISOString().slice(5,10)}
 function report(m){
   const R={},g=k=>R[k]||(R[k]={buyN:0,goods:0,ship:0,sellN:0,sellAmt:0,fees:0,pl:0});
-  items.forEach(i=>{const r=g(pkey(i.bd,m)||'~');r.buyN++;r.goods+=goodsTWD(i);
+  items.forEach(i=>{const r=g(pkey(i.bd,m)||'~');r.buyN++;r.goods+=goodsTWD(i);r.ship+=directShip(i);
     if(sold(i)){const q=g(pkey(i.sd,m)||'~');q.sellN++;q.sellAmt+=n(i.sp);q.fees+=n(i.sf);q.pl+=plOf(i)}});
   ships.forEach(x=>{const c=shipCalc(x.id);if(c.total>0)g(pkey(x.date,m)||'~').ship+=c.total});
   const keys=Object.keys(R).sort((a,b)=>a==='~'?1:b==='~'?-1:b.localeCompare(a));
@@ -481,14 +516,17 @@ async function exportXls(){
     ['w','m','y'].forEach(m=>{const {rows,t}=report(m);
       const aoa=[RCOLS.map(c=>c[0]),...[...rows,t].map(r=>RCOLS.map(c=>c[1]==='label'||isCnt(c[1])?r[c[1]]:Math.round(r[c[1]])))];
       const ws=X.utils.aoa_to_sheet(aoa);ws['!cols']=RCOLS.map((c,i)=>({wch:i?12:24}));X.utils.book_append_sheet(wb,ws,RN[m])});
-    const head=['名稱','品牌','衣櫃','尺寸','狀態','買入日期','買自','幣別','原幣價格','當地運費(原幣)','匯率','商品台幣','國際運費分攤','國內運費分攤','總成本','賣出日期','賣出價','手續費','盈虧','購買目的','穿過嗎','備註'];
-    const det=items.map(i=>{const p=shipParts(i);return [i.name,i.brand||'',i.cat||'',i.size||'',i.status,i.bd||'',i.bw||'',i.cur||'TWD',n(i.bp),n(i.ls),n(i.rate)||1,Math.round(goodsTWD(i)),Math.round(p.intl),Math.round(p.dom),Math.round(costOf(i)),i.sd||'',n(i.sp),n(i.sf),sold(i)?Math.round(plOf(i)):'',i.purpose==='resale'?'買來賣':'自己穿',i.worn==='yes'?'穿過':'沒穿過',i.note||'']});
-    const ws=X.utils.aoa_to_sheet([head,...det]);ws['!cols']=head.map((h,i)=>({wch:i===0?26:i===21?30:12}));X.utils.book_append_sheet(wb,ws,'明細');
+    const head=['名稱','品牌','衣櫃','尺寸','狀態','買入日期','買自','幣別','原幣價格','當地運費(原幣)','匯率','商品台幣','國際運費分攤','國內運費分攤','總成本','賣出日期','賣出價','手續費','盈虧','購買目的','穿過嗎','訂單','備註'];
+    const det=items.map(i=>{const p=shipParts(i);return [i.name,i.brand||'',i.cat||'',i.size||'',i.status,i.bd||'',i.bw||'',i.cur||'TWD',n(i.bp),n(i.ls),n(i.rate)||1,Math.round(goodsTWD(i)),Math.round(p.intl),Math.round(p.dom),Math.round(costOf(i)),i.sd||'',n(i.sp),n(i.sf),sold(i)?Math.round(plOf(i)):'',i.purpose==='resale'?'買來賣':'自己穿',i.worn==='yes'?'穿過':'沒穿過',i.order?((orders.find(x=>x.id===i.order)||{}).name||''):'',i.note||'']});
+    const ws=X.utils.aoa_to_sheet([head,...det]);ws['!cols']=head.map((h,i)=>({wch:i===0?26:i===22?30:12}));X.utils.book_append_sheet(wb,ws,'明細');
     {const g=wornGroups(),aoa=[['類別','件數','總成本','已賣出件數','賣出盈虧']];
       BK.forEach(([nm,k])=>{const t=wornStats(g[k]);aoa.push([nm,t.n,Math.round(t.cost),t.soldN,Math.round(t.pl)])});
       aoa.push([],['類別','名稱','品牌','尺寸','衣櫃','狀態','總成本','賣出價','盈虧']);
       BK.forEach(([nm,k])=>g[k].forEach(i=>aoa.push([nm,i.name,i.brand||'',i.size||'',i.cat||'',i.status,Math.round(costOf(i)),n(i.sp)||'',sold(i)?Math.round(plOf(i)):''])));
       const w=X.utils.aoa_to_sheet(aoa);w['!cols']=[{wch:10},{wch:28},{wch:14},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:12}];X.utils.book_append_sheet(wb,w,'穿著狀況')}
+    if(orders.length){const aoa=[['訂單','件數','已賣出件數','總成本','已賣出實收','已賣出部分盈虧','整單盈虧']];
+      orders.forEach(o=>{const t=orderStats(o);aoa.push([o.name||'未命名',t.m.length,t.sl.length,Math.round(t.cost),Math.round(t.net),Math.round(t.plSold),Math.round(t.whole)])});
+      const w=X.utils.aoa_to_sheet(aoa);w['!cols']=[{wch:24},{wch:8},{wch:12},{wch:12},{wch:12},{wch:16},{wch:12}];X.utils.book_append_sheet(wb,w,'訂單')}
     const out=X.write(wb,{bookType:'xlsx',type:'array'});
     await saveFile('衣櫥帳本_'+todayS()+'.xlsx',new Blob([out],{type:'application/octet-stream'}));
   }catch(e){$('rmsg').textContent='無法載入 Excel 工具，請確認網路後再試。'}
@@ -551,7 +589,7 @@ function bkStatus(){
 $('fullBk').onclick=async()=>{
   const b=$('fullBk');b.disabled=true;$('bkMsg').textContent='正在整理備份…';
   const used={};items.forEach(i=>{[i.photo,...(i.shots||[])].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]})});[cfg.avatar,cfg.bgImg].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]});
-  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,rates,cats,hid,cfg,imgs:used});
+  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,orders,rates,cats,hid,cfg,imgs:used});
   const ok=await saveFile('衣櫥帳本備份_'+todayS()+'.json',new Blob([data],{type:'application/json'}),'bkMsg');
   if(ok){lastBk=new Date().toISOString();await kvSet('meta',{lastBackup:lastBk});bkStatus();$('bkMsg').textContent='已匯出完整備份（'+(data.length/1048576).toFixed(1)+' MB）。請把檔案存到 iCloud、Google Drive，或傳給自己保存。'}
   b.disabled=false;
@@ -569,6 +607,7 @@ $('fullIn').onchange=async e=>{
       rates={...rates,...(d.rates||{})};
       if(d.hid)for(const k in d.hid)hid[k]=[...new Set([...(hid[k]||[]),...d.hid[k]])];
       if(d.cfg)cfg={...cfg,...d.cfg};
+      (d.orders||[]).forEach(x=>{const e=orders.find(q=>q.id===x.id);if(e)Object.assign(e,x);else orders.push(x)});
       for(const id in (d.imgs||{})){imgs[id]=d.imgs[id];await kvSet('img:'+id,d.imgs[id])}
     }
     await save();applyTheme();render();msg.textContent='匯入完成：備份共 '+a.length+' 件，新增 '+add+' 件。';
@@ -661,12 +700,57 @@ $('f_batch').onchange=async()=>{
   calc();
 };
 
+/* orders: same-seller bundles */
+function orderStats(o){const m=items.filter(i=>i.order===o.id),sl=m.filter(sold);const cost=m.reduce((a,i)=>a+costOf(i),0),net=sl.reduce((a,i)=>a+n(i.sp)-n(i.sf),0);return {m,sl,cost,net,plSold:sl.reduce((a,i)=>a+plOf(i),0),whole:net-cost}}
+function orderSummary(o){
+  const t=orderStats(o);
+  if(!t.m.length)return '還沒有衣服。到衣服表單的「所屬訂單」選這張訂單。';
+  return `共 ${t.m.length} 件，已賣出 ${t.sl.length} 件<br>總成本 <b>${money(t.cost)}</b>（含共同運費與國際運費分攤）<br>已賣出實收 <b>${money(t.net)}</b>　已賣出部分盈虧 <b class="${cls(t.plSold)}">${sgn(t.plSold)}</b><br>整單盈虧（賣出實收 − 全部成本）<b class="${cls(t.whole)}">${sgn(t.whole)}</b>${t.sl.length<t.m.length?'，還有 '+(t.m.length-t.sl.length)+' 件未賣出':''}`
+   +t.m.map(i=>`<div class="orow" data-edit="${i.id}"><span>${esc(i.name)}</span><span>成本 ${money(costOf(i))}｜${sold(i)?`賣 ${money(n(i.sp))} <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>`:'未賣出'}</span></div>`).join('');
+}
+function fillOrders(){$('f_order').innerHTML='<option value="">（無）</option>'+orders.map(o=>`<option value="${o.id}">${esc(o.name||'未命名')}</option>`).join('')+'<option value="__order">＋ 新增訂單…</option>'}
+function drawOrders(){
+  $('ordl').innerHTML=orders.map(o=>`<div class="bc" style="cursor:default" data-oid="${o.id}"><div class="g">
+   <div><label>訂單名稱（賣家）</label><input data-f="name" value="${esc(o.name)}"></div>
+   <div><label>日期</label><input data-f="date" type="date" value="${esc(o.date)}"></div>
+   <div><label>幣別</label><select data-f="cur">${CUR.map(c=>`<option${c===o.cur?' selected':''}>${c}</option>`).join('')}</select></div>
+   <div><label>匯率</label><input data-f="rate" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.rate)}"></div>
+   <div><label>共同運費（原幣）</label><input data-f="ls" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.ls)}"></div>
+   <div><label>分攤方式</label><select data-f="split"><option value="equal"${o.split!=='price'?' selected':''}>平均分</option><option value="price"${o.split==='price'?' selected':''}>依價格比例</option></select></div></div>
+   <div class="osum meta" style="margin-top:8px">${orderSummary(o)}</div>
+   <div class="acts"><button data-od="${o.id}">刪除這張訂單</button></div></div>`).join('')||'<div class="empty">還沒有訂單</div>';
+}
+$('bOrd').onclick=()=>{drawOrders();$('dOrd').showModal()};
+$('ordAdd').onclick=()=>{orders.push({id:uid(),name:'',date:todayS(),cur:'USD',rate:rates.USD||32,ls:'',split:'equal'});drawOrders()};
+$('ordl').oninput=e=>{const r=e.target.closest('[data-oid]'),f=e.target.dataset.f;if(!r||!f)return;
+  const o=orders.find(x=>x.id===r.dataset.oid);o[f]=e.target.value;
+  if(f==='cur'){o.rate=rates[o.cur]||1;drawOrders();return}
+  r.querySelector('.osum').innerHTML=orderSummary(o)};
+$('ordl').onclick=async e=>{
+  const d=e.target.closest('[data-od]');
+  if(d){if(await yes('刪除這張訂單？裡面的衣服會保留，但共同運費不再分攤。')){orders=orders.filter(x=>x.id!==d.dataset.od);items.forEach(i=>{if(i.order===d.dataset.od)i.order=''});drawOrders()}return}
+  const it=e.target.closest('[data-edit]');if(it)openEdit(it.dataset.edit)};
+$('ordOk').onclick=()=>$('dOrd').close();
+$('dOrd').addEventListener('close',()=>{save();render()});
+$('dlg').addEventListener('close',()=>{if($('dOrd').open)drawOrders()});
+$('f_order').onchange=async()=>{
+  if($('f_order').value==='__order'){
+    const nm=await ask('新訂單的名稱（例：賣家名稱或日期）','');
+    if(nm===null){$('f_order').value='';calc();return}
+    const ls=await ask('這張訂單的共同運費（原幣，沒有就留空）','');
+    const cur=$('f_cur').value;
+    const o={id:uid(),name:nm.trim(),date:$('f_bd').value||todayS(),cur,rate:n($('f_rate').value)||rates[cur]||1,ls:(ls||'').trim(),split:'equal'};
+    orders.push(o);await save();fillOrders();$('f_order').value=o.id;
+  }
+  calc();
+};
+
 /* init */
 (async()=>{
   const all=await kvAll();
   if(all.meta&&all.meta.lastBackup)lastBk=all.meta.lastBackup;
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg}}
+  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);if(Array.isArray(all.data.orders))orders=all.data.orders;rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg}}
   else{try{const r=localStorage.getItem('kids-closet-v1');if(r){items=JSON.parse(r).map(i=>({...i,cur:'TWD',rate:1,shots:[]}));await save()}}catch(e){}}
   for(const k in all)if(k.startsWith('img:'))imgs[k.slice(4)]=all[k];
   applyTheme();render();
