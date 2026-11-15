@@ -68,6 +68,9 @@ details{background:var(--card);border-radius:12px;padding:10px 14px}.empty{backg
 .orow{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}
 .imgs .x.ed{right:auto;left:-6px}
 #dCrop{width:min(580px,96vw)}#cropAr button{min-height:36px;padding:4px 12px}#cropAr button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#selBar{display:none;position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.18);z-index:20}
+input.selbox{width:24px;height:24px;min-height:0;padding:0;flex:none;align-self:center;accent-color:var(--acc)}
+.item.sel{outline:2px solid var(--acc);outline-offset:-1px}
 .empty{text-align:center;color:var(--sub);padding:40px 10px}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:99px;padding:12px 22px}
 dialog{border:none;border-radius:16px;padding:18px;width:min(580px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
@@ -107,7 +110,7 @@ textarea{min-height:70px}
 </div>
 <div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
 <div id="brandView"></div>
-<div id="itemView"><div id="bhead"></div><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="margin-bottom:10px"><div class="tabs" id="tabs"></div><div id="list"></div></div>
+<div id="itemView"><div id="bhead"></div><div class="bar" style="margin-bottom:10px"><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="flex:1 1 150px;margin:0"><button id="selToggle">☑ 選取</button></div><div class="tabs" id="tabs"></div><div id="list"></div></div>
 
 </main>
 <main id="setPage" style="display:none">
@@ -156,6 +159,10 @@ textarea{min-height:70px}
   <textarea id="io" placeholder="備份文字會出現在這裡；還原時貼上再按「貼上還原」"></textarea>
 </details>
 </main>
+<div id="selBar">
+  <div class="row" style="margin-bottom:8px;align-items:center"><b id="selCnt">已選 0 件</b><span style="display:flex;gap:6px"><button id="selAll">全選</button><button id="selNone">取消勾選</button></span></div>
+  <div class="bar" style="margin:0"><select id="selCat" style="flex:1 1 150px"></select><button class="p" id="selApply">套用到已選</button><button id="selExit">完成</button></div>
+</div>
 <button class="p fab" id="add">＋ 新增衣服</button>
 
 <dialog id="dlg">
@@ -252,7 +259,7 @@ textarea{min-height:70px}
 const $=id=>document.getElementById(id);
 const CUR=['USD','TWD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
 const DEF={TWD:1,USD:32,JPY:0.21,KRW:0.023,CNY:4.4,HKD:4.1,EUR:35,GBP:41,AUD:21,CAD:23};
-const STAT=['全部','已購入','待售','已售出','收藏中','未填價格','未算運費'];
+const STAT=['全部','已購入','待售','已售出','收藏中','未填價格','未算運費','未選衣櫃'];
 let items=[],ships=[],orders=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
 /* storage: IndexedDB with in-memory fallback */
 const dbp=new Promise(r=>{try{const q=indexedDB.open('closet',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
@@ -289,7 +296,7 @@ const shipOf=i=>{const p=shipParts(i);return p.intl+p.dom};
 const directShip=i=>{const c=i.batch?shipCalc(i.batch):null;if(c)return n(i.dom);const p=shipParts(i);return p.intl+p.dom};
 const noPrice=i=>String(i.bp??'').trim()==='';
 const shipDone=i=>shipOf(i)>0||String(i.intl??'').trim()==='0';
-function tabMatch(i,t){return t==='全部'||(t==='未填價格'?noPrice(i):t==='未算運費'?!shipDone(i):i.status===t)}
+function tabMatch(i,t){return t==='全部'||(t==='未填價格'?noPrice(i):t==='未算運費'?!shipDone(i):t==='未選衣櫃'?!(i.cat&&cats.includes(i.cat)):i.status===t)}
 function orderCalc(oid,extra){
   const o=orders.find(x=>x.id===oid);if(!o)return null;
   let list=items.filter(x=>x.order===oid).map(x=>({id:x.id,v:n(x.bp)*(n(x.rate)||1)}));
@@ -325,15 +332,15 @@ function render(){bkStatus();
   $('sCnt').textContent=items.length+' 件 / '+sl.length+' 件';$('sSpend').textContent=money(goods+ship);$('sShip').textContent=money(ship);$('sSell').textContent=money(sell);
   $('sPL').textContent=sgn(pl);$('sPL').className=cls(pl);$('sNet').textContent=sgn(goods+ship-sell).replace('+','');
   $('seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
-  const bv=view!=='all'&&!curBrand;$('brandView').style.display=bv?'':'none';$('itemView').style.display=bv?'none':'';
+  const bv=view!=='all'&&!curBrand;if(bv&&selMode){selMode=false;sel.clear();$('selBar').style.display='none';$('add').style.display='';$('selToggle').textContent='☑ 選取'}$('brandView').style.display=bv?'':'none';$('itemView').style.display=bv?'none':'';
   $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(curBrand)}</b></div>`:'';
   if(bv)drawGroups();
   const pool=curBrand?items.filter(i=>gkey(i)===curBrand):items;
-  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
+  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'||s==='未選衣櫃'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
   const q=$('q').value.trim().toLowerCase();
   const list=items.filter(i=>(!curBrand||gkey(i)===curBrand)&&tabMatch(i,filter)&&(!q||[i.name,i.brand,i.cat,i.size,i.note,i.bw,i.sw].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
-  $('list').innerHTML=list.length?list.map(i=>{const g=goodsTWD(i),sh=shipOf(i),foreign=i.cur&&i.cur!=='TWD';
-    return `<div class="item" data-id="${i.id}" data-s="${i.status}" tabindex="0">
+  visIds=list.map(i=>i.id);$('list').innerHTML=list.length?list.map(i=>{const g=goodsTWD(i),sh=shipOf(i),foreign=i.cur&&i.cur!=='TWD';
+    return `<div class="item${selMode&&sel.has(i.id)?' sel':''}" data-id="${i.id}" data-s="${i.status}" tabindex="0">${selMode?`<input type="checkbox" class="selbox" ${sel.has(i.id)?'checked':''} tabindex="-1" aria-label="選取">`:''}
     ${i.photo&&imgs[i.photo]?`<img class="th" src="${imgs[i.photo]}" alt="">`:'<div class="th">👚</div>'}
     <div class="bd"><div class="row"><span class="name">${esc(i.name)}</span><span class="tag">${i.status}</span></div>
     <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw,i.purpose==='resale'?'買來賣':'',i.worn==='yes'?'穿過':'',i.order?('訂單：'+((orders.find(x=>x.id===i.order)||{}).name||'未命名')):''].filter(Boolean).map(esc).join('・')}</div>
@@ -472,8 +479,8 @@ note：狀況、顏色、材質等簡短備註，繁體中文，不超過 40 字
   }finally{btn.disabled=false}
 };
 try{window.claude&&window.claude.use('sample').then(x=>{aiSample=x;if(tmp&&$('dlg').open)drawImgs()}).catch(()=>{})}catch(e){}
-$('list').onclick=e=>{const c=e.target.closest('.item');if(c)openEdit(c.dataset.id)};
-$('list').onkeydown=e=>{if(e.key==='Enter'){const c=e.target.closest('.item');if(c)openEdit(c.dataset.id)}};
+$('list').onclick=e=>{const c=e.target.closest('.item');if(c){if(selMode)toggleSel(c.dataset.id);else openEdit(c.dataset.id)}};
+$('list').onkeydown=e=>{if(e.key==='Enter'){const c=e.target.closest('.item');if(c){if(selMode)toggleSel(c.dataset.id);else openEdit(c.dataset.id)}}};
 $('tabs').onclick=e=>{const b=e.target.closest('button');if(b){filter=b.dataset.t;render()}};
 $('q').oninput=render;
 /* rates */
@@ -925,6 +932,39 @@ $('brandListUI').onclick=async e=>{
   const r=e.target.closest('[data-br]'),d=e.target.closest('[data-bd]');
   if(r){const old=r.dataset.br,nw=((await ask('品牌新名稱',old))||'').trim();if(!nw||nw===old)return;if(brandList.includes(nw)){await say('這個名稱已經存在');return}brandList=brandList.map(c=>c===old?nw:c);items.forEach(i=>{if((i.brand||'').trim()===old)i.brand=nw});await save();drawSetLists();render()}
   if(d){const old=d.dataset.bd;if(await yes('從常用品牌清單移除「'+old+'」？已經記錄的衣服不受影響。')){brandList=brandList.filter(c=>c!==old);await save();drawSetLists()}}
+};
+
+/* bulk select: assign several items to a wardrobe at once */
+let selMode=false,sel=new Set(),visIds=[];
+function drawSelBar(){$('selCnt').textContent='已選 '+sel.size+' 件'}
+function fillSelCat(v){$('selCat').innerHTML='<option value="">選擇要放入的衣櫃…</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__none">改為未分類</option><option value="__new">＋ 新增衣櫃…</option>';$('selCat').value=v||''}
+function setSelMode(on){
+  selMode=on;sel.clear();$('selBar').style.display=on?'block':'none';$('add').style.display=on?'none':'';
+  $('selToggle').textContent=on?'完成選取':'☑ 選取';if(on)fillSelCat();drawSelBar();render();
+}
+function toggleSel(id){
+  if(sel.has(id))sel.delete(id);else sel.add(id);
+  const el=$('list').querySelector('.item[data-id="'+id+'"]');
+  if(el){el.classList.toggle('sel',sel.has(id));const cb=el.querySelector('.selbox');if(cb)cb.checked=sel.has(id)}
+  drawSelBar();
+}
+$('selToggle').onclick=()=>setSelMode(!selMode);
+$('selExit').onclick=()=>setSelMode(false);
+$('selAll').onclick=()=>{visIds.forEach(id=>sel.add(id));drawSelBar();render()};
+$('selNone').onclick=()=>{sel.clear();drawSelBar();render()};
+$('selCat').onchange=async()=>{
+  if($('selCat').value!=='__new')return;
+  const nm=((await ask('新衣櫃名稱（例：包屁、褲子、洋裝）',''))||'').trim();
+  if(nm&&nm!=='未分類'&&!cats.includes(nm)){cats.push(nm);await save()}
+  fillSelCat(cats.includes(nm)?nm:'');
+};
+$('selApply').onclick=async()=>{
+  const v=$('selCat').value;
+  if(!sel.size){await say('請先勾選衣服。');return}
+  if(!v||v==='__new'){await say('請先選擇要放入的衣櫃。');return}
+  const val=v==='__none'?'':v,k=sel.size;
+  items.forEach(i=>{if(sel.has(i.id))i.cat=val});
+  await save();sel.clear();render();$('selCnt').textContent='已更新 '+k+' 件'+(val?'，放入「'+val+'」':'，改為未分類');
 };
 
 /* init */
