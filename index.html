@@ -71,6 +71,9 @@ details{background:var(--card);border-radius:12px;padding:10px 14px}.empty{backg
 #selBar{display:none;position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.18);z-index:20}
 input.selbox{width:24px;height:24px;min-height:0;padding:0;flex:none;align-self:center;accent-color:var(--acc)}
 .item.sel{outline:2px solid var(--acc);outline-offset:-1px}
+.nointl .intl-only{display:none!important}
+.dhead{position:sticky;top:-18px;z-index:6;display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:-18px -18px 8px;padding:10px 14px 8px;background:var(--bg);border-radius:16px 16px 0 0}
+.dhead button{min-height:38px;padding:4px 14px}.dhead .dx{width:42px;padding:0;font-size:1.1rem}
 .empty{text-align:center;color:var(--sub);padding:40px 10px}
 .fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:99px;padding:12px 22px}
 dialog{border:none;border-radius:16px;padding:18px;width:min(580px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
@@ -108,7 +111,7 @@ textarea{min-height:70px}
   <div class="stat"><small>淨支出（花費－實收）</small><b id="sNet"></b></div>
   <div class="stat"><small>其中運費（國際＋國內）</small><b class="buy" id="sShip"></b></div>
 </div>
-<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
+<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip" style="display:none">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
 <div id="brandView"></div>
 <div id="itemView"><div id="bhead"></div><div class="bar" style="margin-bottom:10px"><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="flex:1 1 150px;margin:0"><button id="selToggle">☑ 選取</button></div><div class="tabs" id="tabs"></div><div id="list"></div></div>
 
@@ -141,10 +144,15 @@ textarea{min-height:70px}
   <div class="bar" style="margin-top:8px"><input id="brandNew" placeholder="新增品牌，例：RR" style="flex:1"><button id="brandNewBtn" class="p">新增</button></div>
 </div>
 <div class="stat" style="margin-top:12px">
-  <b style="font-size:1rem">📦 集運運費</b>
-  <p class="meta">每磅費用（台幣）。在衣服表單填「重量」，就會用這個費用自動算國際運費（重量 × 每磅費用）。每件衣服儲存時會記住當時的費用，之後調價不會動到舊的衣服。集運單是選用功能，用到時也會帶入這個費用。</p>
-  <label>每磅費用 NT$</label><input id="cfgShip" type="number" inputmode="decimal" min="0" step="any">
-  <div class="bar" style="margin-top:8px"><button id="cfgShipAll">套用到所有已建立的集運單</button></div>
+  <b style="font-size:1rem">🌏 國際運費（集運）</b>
+  <label style="display:flex;gap:10px;align-items:center;margin-top:10px;color:var(--ink);font-size:.95rem"><input type="checkbox" id="cfgIntl" class="selbox"> 我有在國外買，需要國際運費（集運）欄位</label>
+  <p class="meta">沒勾的話，新增衣服時不會出現重量、每磅集運費、國際運費、集運單這些欄位。</p>
+  <div id="intlBox">
+    <label>每磅集運費 NT$</label><input id="cfgShip" type="number" inputmode="decimal" min="0" step="any">
+    <p class="meta">在衣服表單填「重量」，就會用這個費用自動算國際運費（重量 × 每磅費用）。每件衣服儲存時會記住當時的費用，之後調價不會動到舊的衣服。</p>
+    <div class="bar"><button id="cfgShipAll">套用到所有已建立的集運單</button><button id="cfgShipMgr">📦 管理集運單</button></div>
+    <label style="display:flex;gap:10px;align-items:center;margin-top:6px;color:var(--ink);font-size:.95rem"><input type="checkbox" id="cfgHomeShip" class="selbox"> 在首頁顯示「集運單」按鈕</label>
+  </div>
 </div>
 <div class="stat" style="margin-top:12px">
   <b style="font-size:1rem">💾 備份與換手機</b>
@@ -176,31 +184,20 @@ textarea{min-height:70px}
     <div><label>購買目的</label><select id="f_purpose"><option value="wear">自己（女兒）穿</option><option value="resale">純粹買來賣</option></select></div>
     <div><label>穿過嗎</label><select id="f_worn"><option value="no">沒穿過</option><option value="yes">穿過</option></select></div>
     <div class="full"><label>分類（包屁、褲子、洋裝…，選單可在設定裡改）</label><select id="f_cat"></select><div class="chips" data-chip="cat"></div></div>
-    <div><label>重量（算國際運費用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
     <div class="full sec">購買資料</div>
     <div><label>幣別</label><select id="f_cur"></select></div>
     <div><label>匯率（1 單位 = 幾元台幣）</label><input id="f_rate" type="number" inputmode="decimal" step="any" min="0"></div>
     <div><label>商品價格（原幣）</label><input id="f_bp" type="number" inputmode="decimal" step="any" min="0"></div>
     <div><label>賣家當地運費／平台費（原幣）</label><input id="f_ls" type="number" inputmode="decimal" step="any" min="0"></div>
     <div><label>買入日期</label><input id="f_bd" type="date"></div>
-    <div><label>所屬集運單</label><select id="f_batch"></select></div>
+    <div class="intl-only"><label>所屬集運單</label><select id="f_batch"></select></div>
     <input type="hidden" id="f_order">
-    <div class="full" id="mergeBox"><label>合併訂單（跟另一件衣服一起買、共用運費）</label><select id="f_link"></select>
-      <div id="mergeFields" style="display:none;margin-top:8px">
-        <div class="g">
-          <div class="full"><label>訂單名稱</label><input id="f_oname" placeholder="例：賣家名稱或日期"></div>
-          <div><label>共同運費（原幣）</label><input id="f_ols" type="number" inputmode="decimal" min="0" step="any"></div>
-          <div><label>運費分攤方式（共同運費、國際運費都適用）</label><select id="f_osplit"><option value="equal">平均分</option><option value="price">依價格比例</option></select></div>
-          <div><label>整筆訂單集運總重量</label><div style="display:flex;gap:6px"><input id="f_ow" type="number" inputmode="decimal" min="0" step="any" placeholder="例：0.5"><select id="f_owu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
-          <div><label>每磅集運費 NT$</label><input id="f_osrate" type="number" inputmode="decimal" min="0" step="any"></div>
-          <div class="full"><label>國際運費 NT$（留空＝總重量×每磅；會平均分給訂單裡每件衣服）</label><input id="f_ointl" type="number" inputmode="decimal" min="0" step="any"></div>
-        </div>
-        <div class="meta" id="mergeInfo" style="margin-top:6px"></div>
-      </div>
-    </div>
-    <div><label>每磅集運費 NT$</label><input id="f_srate" type="number" inputmode="decimal" min="0" step="any"></div>
-    <div><label>國際運費 NT$（留空＝重量×每磅）</label><input id="f_intl" type="number" inputmode="decimal" min="0" step="any"></div>
-    <div><label>國內運費 NT$</label><input id="f_dom" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div class="full" id="mergeBox" style="display:none"><div class="calc" id="orderNote"></div><button type="button" id="orderOut" style="margin-top:6px">移出這張訂單</button></div>
+    <div class="full intl-only sec" style="margin-bottom:-4px">國際運費（集運）</div>
+    <div class="intl-only"><label>重量（算國際運費用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
+    <div class="intl-only"><label>每磅集運費 NT$</label><input id="f_srate" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div class="intl-only"><label>國內運費 NT$（集運寄到家）</label><input id="f_dom" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div class="full intl-only"><details style="padding:0;background:none"><summary style="color:var(--sub);font-size:.85rem">手動輸入國際運費（一般不用填）</summary><label style="margin-top:6px">國際運費 NT$（填了就不用重量計算）</label><input id="f_intl" type="number" inputmode="decimal" min="0" step="any"></details></div>
     <div class="full calc" id="calc"></div>
     <div class="full"><label>購買截圖</label><div class="imgs" id="shWrap"></div></div>
     <div class="full" id="aiRow" style="display:none"><button type="button" class="p" id="aiBtn">✨ 用截圖自動填入</button><div class="aimsg" id="aiMsg"></div></div>
@@ -233,10 +230,29 @@ textarea{min-height:70px}
 <dialog id="big"><img id="bigImg" alt="放大檢視"></dialog>
 
 <dialog id="dOrd">
-  <div class="sec" style="margin-bottom:8px">訂單（同賣家合購）</div>
-  <p class="meta">同一個賣家一次買多件、運費共用時，建立一張訂單。每件衣服各自填價格和賣出價，共同運費會分攤到各件，這裡可以看整張訂單合併的盈虧。衣服要在表單的「所屬訂單」選這張訂單。</p>
-  <div id="ordl"></div><button id="ordAdd">＋ 新增訂單</button>
-  <div class="acts"><button class="p" id="ordOk">完成</button></div>
+  <div id="ordListView">
+    <div class="sec" style="margin-bottom:4px">🛒 訂單（同賣家合購）</div>
+    <p class="meta" style="margin:0 0 6px">同一個賣家一次買多件、運費共用時，建立一張訂單，把衣服加進去。各件各自填賣出價，整張訂單的盈虧合併計算。</p>
+    <div class="meta" id="ordStat" style="margin-bottom:6px"></div>
+    <input id="ordQ" type="search" placeholder="搜尋訂單名稱或衣服名稱" style="margin-bottom:8px">
+    <div class="tabs" id="ordTabs"><button data-t="進行中">進行中</button><button data-t="已完成">已完成</button><button data-t="全部">全部</button></div>
+    <div id="ordList"></div>
+    <div class="acts"><button id="ordAdd">＋ 新增訂單</button><button class="p" id="ordOk">完成</button></div>
+  </div>
+  <div id="ordDetailView" style="display:none">
+    <div class="row" style="margin-bottom:8px;align-items:center"><button id="ordBack">← 訂單列表</button><b id="ordTitle"></b></div>
+    <div id="ordl"></div>
+    <div class="bar" style="margin-top:8px"><button class="p" id="ordAddItems">＋ 加入衣服</button><button id="ordDel" style="color:var(--buy)">刪除這張訂單</button></div>
+  </div>
+</dialog>
+<dialog id="dPick">
+  <div class="sec" style="margin-bottom:4px">加入衣服到訂單</div>
+  <div class="meta" id="pickTo"></div>
+  <input id="pickQ" type="search" placeholder="搜尋衣服名稱、品牌、尺寸" style="margin:8px 0">
+  <div class="bar" style="margin:0 0 6px"><button id="pickAll">全選目前清單</button><button id="pickNone">取消勾選</button></div>
+  <div id="pickList" style="max-height:46vh;overflow:auto"></div>
+  <div class="meta" style="margin-top:6px">已經在其他訂單裡的衣服不會出現在這裡。</div>
+  <div class="acts"><button id="pickNo">取消</button><button class="p" id="pickOk">加入 0 件</button></div>
 </dialog>
 <dialog id="dCrop">
   <div class="sec" style="margin-bottom:8px">調整照片範圍</div>
@@ -336,7 +352,7 @@ function render(){bkStatus();
   $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(curBrand)}</b></div>`:'';
   if(bv)drawGroups();
   const pool=curBrand?items.filter(i=>gkey(i)===curBrand):items;
-  $('tabs').innerHTML=STAT.map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'||s==='未選衣櫃'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
+  $('tabs').innerHTML=STAT.filter(t=>cfg.intl||t!=='未算運費').map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'||s==='未選衣櫃'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
   const q=$('q').value.trim().toLowerCase();
   const list=items.filter(i=>(!curBrand||gkey(i)===curBrand)&&tabMatch(i,filter)&&(!q||[i.name,i.brand,i.cat,i.size,i.note,i.bw,i.sw].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
   visIds=list.map(i=>i.id);$('list').innerHTML=list.length?list.map(i=>{const g=goodsTWD(i),sh=shipOf(i),foreign=i.cur&&i.cur!=='TWD';
@@ -344,7 +360,7 @@ function render(){bkStatus();
     ${i.photo&&imgs[i.photo]?`<img class="th" src="${imgs[i.photo]}" alt="">`:'<div class="th">👚</div>'}
     <div class="bd"><div class="row"><span class="name">${esc(i.name)}</span><span class="tag">${i.status}</span></div>
     <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size),i.bw,i.purpose==='resale'?'買來賣':'',i.worn==='yes'?'穿過':'',i.order?('訂單：'+((orders.find(x=>x.id===i.order)||{}).name||'未命名')):''].filter(Boolean).map(esc).join('・')}</div>
-    <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:'<span class="neg">未填購入價格</span>'}${!noPrice(i)&&!shipDone(i)?' <span class="neg">未算運費</span>':''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
+    <div class="meta">${i.bp!==''&&i.bp!=null?`買 <b class="buy">${money(g+sh)}</b>${foreign?`（${esc(i.cur)} ${n(i.bp)+n(i.ls)}）`:''}${sh?`，含運費 ${money(sh)}`:''}`:'<span class="neg">未填購入價格</span>'}${cfg.intl&&!noPrice(i)&&!shipDone(i)?' <span class="neg">未算運費</span>':''}${i.sp?` ・ 賣 <b class="sell">${money(n(i.sp))}</b>`:''}</div>${sold(i)?`<div class="meta">盈虧 <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>${n(i.sf)?`（已扣手續費／運費 ${money(n(i.sf))}）`:''}</div>`:(n(i.ask)?`<div class="meta">預計賣 <b>${money(n(i.ask))}</b>，預估盈虧 <b class="${cls(n(i.ask)-n(i.sf)-costOf(i))}">${sgn(n(i.ask)-n(i.sf)-costOf(i))}</b></div>`:'')}</div></div>`}).join(''):
     `<div class="empty">${items.length?'沒有符合的衣服':'還沒有紀錄，點右下角「新增衣服」開始吧'}</div>`;
 }
 /* images */
@@ -394,7 +410,7 @@ function calc(){
   if(f.c){h+=`<br>集運單：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
     if(f.lb<=0)h+='<br><span class="meta">這件沒填重量，目前依平均分攤</span>'}
   else if(f.intl>0||f.dom>0)h+=`<br>國際運費 <b>${money(f.intl)}</b>${f.viaOrder?'（整筆訂單的集運費，依分攤方式分給每件）':f.manual>0?'（手動填寫）':`（${+f.lb.toFixed(2)} 磅 × NT$${f.sr}）`}＋國內運費 <b>${money(f.dom)}</b>`;
-  else h+='<br><span class="meta">還沒算運費：填「重量」就會自動算國際運費</span>';
+  else if(cfg.intl)h+='<br><span class="meta">還沒算運費：填「重量」就會自動算國際運費</span>';
   h+=`<br>總成本 <b class="buy">${money(f.cost)}</b>`;
   $('calc').innerHTML=h;calc2();
 }
@@ -420,12 +436,7 @@ $('save').onclick=async()=>{
   if(!o.srate)o.srate=String(cfg.shipRate||180);
   ['size','brand','bw','sw'].forEach(k=>{if(o[k]&&hid[k])hid[k]=hid[k].filter(x=>x!==o[k])});
   o.batch=$('f_batch').value;o.photo=tmp.photo;o.shots=tmp.shots;
-  {const v=o.order;
-    if(v==='__new'){const x=items.find(i=>i.id===pend.x);
-      if(x){const ord={id:uid(),name:$('f_oname').value.trim()||x.name||'訂單',date:o.bd||todayS(),cur:o.cur,rate:n(o.rate)||rates[o.cur]||1,ls:$('f_ols').value.trim(),split:$('f_osplit').value,w:$('f_ow').value.trim(),wu:$('f_owu').value,srate:$('f_osrate').value.trim(),intl:$('f_ointl').value.trim()};
-        orders.push(ord);x.order=ord.id;if(String(pend.ls??'').trim()!=='')x.ls='';o.order=ord.id}
-      else o.order=''}
-    else if(v){const ord=orders.find(q=>q.id===v);if(ord){ord.name=$('f_oname').value.trim()||ord.name;ord.ls=$('f_ols').value.trim();ord.split=$('f_osplit').value;ord.w=$('f_ow').value.trim();ord.wu=$('f_owu').value;ord.srate=$('f_osrate').value.trim();ord.intl=$('f_ointl').value.trim()}else o.order=''}}
+
   if(o.sp&&(o.status==='已購入'||o.status==='待售'))o.status='已售出';
   let id=editId;
   if(id)Object.assign(items.find(i=>i.id===id),o);else{id=uid();items.push({id,created:new Date().toISOString().slice(0,10),...o})}
@@ -688,7 +699,7 @@ $('dlg').addEventListener('click',async e=>{
 
 /* appearance: name, photo, background */
 const DEFTITLE='女兒的小衣櫥';
-const DEFCFG={title:DEFTITLE,avatar:'',bgType:'none',bgVal:'',bgImg:'',shipRate:180};
+const DEFCFG={title:DEFTITLE,avatar:'',bgType:'none',bgVal:'',bgImg:'',shipRate:180,intl:true,homeShip:false};
 let cfg={...DEFCFG};
 const svgU=s=>'url("data:image/svg+xml,'+encodeURIComponent(s)+'")';
 const PAT={
@@ -727,7 +738,7 @@ function drawCfg(){
   Object.entries(PAT).forEach(([k,p])=>add('pattern',k,p.n,b=>{b.style.backgroundColor='#fff';b.style.backgroundImage=p.img();b.style.backgroundSize=p.size}));
   if(cfg.bgType==='image'&&imgs[cfg.bgImg]){const b=document.createElement('button');b.type='button';b.className='sw sel';b.title='我的圖片';b.setAttribute('aria-label','我的圖片');b.style.backgroundImage='url("'+imgs[cfg.bgImg]+'")';b.style.backgroundSize='cover';box.appendChild(b)}
 }
-function showPage(p){const st=p==='set';$('homePage').style.display=st?'none':'';$('setPage').style.display=st?'':'none';$('add').style.display=st?'none':'';window.scrollTo(0,0);if(st){$('cfgTitle').value=cfg.title;$('cfgShip').value=cfg.shipRate||180;drawCfg();bkStatus()}}
+function showPage(p){const st=p==='set';$('homePage').style.display=st?'none':'';$('setPage').style.display=st?'':'none';$('add').style.display=st?'none':'';window.scrollTo(0,0);if(st){$('cfgTitle').value=cfg.title;$('cfgShip').value=cfg.shipRate||180;$('cfgIntl').checked=!!cfg.intl;$('cfgHomeShip').checked=!!cfg.homeShip;drawCfg();bkStatus()}}
 $('bCfg').onclick=()=>showPage('set');
 $('bkWarn').style.cursor='pointer';$('bkWarn').onclick=()=>showPage('set');
 $('setBack').onclick=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyTheme();save();showPage('home')};
@@ -736,7 +747,7 @@ $('cfgTitle').onchange=()=>{cfg.title=(cfg.title||'').trim()||DEFTITLE;applyThem
 $('cfgBgIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const id=await putImg(f,1200,.7,cfg.bgImg);if(id){cfg.bgType='image';cfg.bgVal='';cfg.bgImg=id;applyTheme();drawCfg();await save()}};
 $('cfgColor').oninput=()=>{cfg.bgType='color';cfg.bgVal=$('cfgColor').value;applyTheme()};
 $('cfgColor').onchange=()=>setBg('color',$('cfgColor').value);
-$('cfgReset').onclick=async()=>{if(!await yes('恢復成預設的名稱、照片與背景？'))return;for(const id of [cfg.avatar,cfg.bgImg])if(id){delete imgs[id];await kvDel('img:'+id)}cfg={...DEFCFG,shipRate:cfg.shipRate};$('cfgTitle').value=cfg.title;applyTheme();drawCfg();await save()};
+$('cfgReset').onclick=async()=>{if(!await yes('恢復成預設的名稱、照片與背景？'))return;for(const id of [cfg.avatar,cfg.bgImg])if(id){delete imgs[id];await kvDel('img:'+id)}cfg={...DEFCFG,shipRate:cfg.shipRate,intl:cfg.intl,homeShip:cfg.homeShip};$('cfgTitle').value=cfg.title;applyTheme();drawCfg();await save()};
 
 /* shipping rate setting + quick add shipment */
 $('cfgShip').onchange=()=>{const v=n($('cfgShip').value);cfg.shipRate=v>0?v:180;$('cfgShip').value=cfg.shipRate;save()};
@@ -761,81 +772,96 @@ $('f_batch').onchange=async()=>{
 function orderStats(o){const m=items.filter(i=>i.order===o.id),sl=m.filter(sold);const cost=m.reduce((a,i)=>a+costOf(i),0),net=sl.reduce((a,i)=>a+n(i.sp)-n(i.sf),0);return {m,sl,cost,net,plSold:sl.reduce((a,i)=>a+plOf(i),0),whole:net-cost}}
 function orderSummary(o){
   const t=orderStats(o);
-  if(!t.m.length)return '還沒有衣服。到衣服表單的「所屬訂單」選這張訂單。';
+  if(!t.m.length)return '還沒有衣服，按下面的「＋ 加入衣服」。';
   return `共 ${t.m.length} 件，已賣出 ${t.sl.length} 件<br>總成本 <b>${money(t.cost)}</b>（含共同運費與國際運費分攤）<br>已賣出實收 <b>${money(t.net)}</b>　已賣出部分盈虧 <b class="${cls(t.plSold)}">${sgn(t.plSold)}</b><br>整單盈虧（賣出實收 − 全部成本）<b class="${cls(t.whole)}">${sgn(t.whole)}</b>${t.sl.length<t.m.length?'，還有 '+(t.m.length-t.sl.length)+' 件未賣出':''}`
-   +t.m.map(i=>`<div class="orow" data-edit="${i.id}"><span>${esc(i.name)}</span><span>成本 ${money(costOf(i))}｜${sold(i)?`賣 ${money(n(i.sp))} <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>`:'未賣出'}</span></div>`).join('');
+   +t.m.map(i=>`<div class="orow" data-edit="${i.id}"><span>${esc(i.name)}</span><span>成本 ${money(costOf(i))}｜${sold(i)?`賣 ${money(n(i.sp))} <b class="${cls(plOf(i))}">${sgn(plOf(i))}</b>`:'未賣出'}</span><button class="pen" data-out="${i.id}" aria-label="移出訂單">移出</button></div>`).join('');
 }
-function fillOrders(){$('f_order').innerHTML='<option value="">（無）</option>'+orders.map(o=>`<option value="${o.id}">${esc(o.name||'未命名')}</option>`).join('')+'<option value="__order">＋ 新增訂單…</option>'}
+let ordTab='進行中',ordQ='',ordShown=15,curOrd=null,pickSel=new Set(),pickQ='';
+const ordIsDone=t=>t.m.length>0&&t.sl.length===t.m.length;
+const ordMonth=o=>/^\d{4}-\d{2}/.test(o.date||'')?o.date.slice(0,7):'未填日期';
 function drawOrders(){
-  $('ordl').innerHTML=orders.map(o=>`<div class="bc" style="cursor:default" data-oid="${o.id}"><div class="g">
-   <div><label>訂單名稱（賣家）</label><input data-f="name" value="${esc(o.name)}"></div>
+  $('ordListView').style.display=curOrd?'none':'';$('ordDetailView').style.display=curOrd?'':'none';
+  if(curOrd){drawOrdDetail();return}
+  const all=orders.map(o=>({o,t:orderStats(o)})),done=all.filter(x=>ordIsDone(x.t));
+  const wholeSum=done.reduce((a,x)=>a+x.t.whole,0);
+  $('ordStat').innerHTML=orders.length?'共 '+orders.length+' 張・進行中 '+(orders.length-done.length)+'・已完成 '+done.length+(done.length?'・已完成訂單盈虧合計 <b class="'+cls(wholeSum)+'">'+sgn(wholeSum)+'</b>':''):'';
+  $('ordTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.t===ordTab));
+  const q=ordQ.trim().toLowerCase();
+  const list=all.filter(x=>(ordTab==='全部'||(ordTab==='已完成'?ordIsDone(x.t):!ordIsDone(x.t)))&&(!q||(x.o.name||'').toLowerCase().includes(q)||x.t.m.some(i=>(i.name||'').toLowerCase().includes(q))))
+    .sort((a,b)=>(b.o.date||'').localeCompare(a.o.date||''));
+  const shown=list.slice(0,ordShown);let h='',last=null;
+  shown.forEach(({o,t})=>{const mo=ordMonth(o);if(mo!==last){h+='<div class="meta" style="margin:10px 0 4px"><b>'+esc(mo)+'</b></div>';last=mo}
+    h+=`<div class="bc" data-ov="${o.id}" tabindex="0"><div class="row"><span class="name">${esc(o.name||'未命名')}</span><span class="meta">${esc(o.date||'')}</span></div>
+      <div class="row meta"><span>${t.m.length} 件・已賣出 ${t.sl.length} 件${ordIsDone(t)?'・✅ 已完成':''}</span><span>${t.sl.length?`整單 <b class="${cls(t.whole)}">${sgn(t.whole)}</b>`:''}</span></div></div>`});
+  if(!list.length)h='<div class="empty">'+(orders.length?'沒有符合的訂單':'還沒有訂單，按「＋ 新增訂單」開始')+'</div>';
+  if(list.length>shown.length)h+='<button id="ordMore" style="width:100%;margin-top:6px">顯示更多（還有 '+(list.length-shown.length)+' 張）</button>';
+  $('ordList').innerHTML=h;
+}
+function drawOrdDetail(){
+  const o=orders.find(x=>x.id===curOrd);if(!o){curOrd=null;drawOrders();return}
+  $('ordTitle').textContent=o.name||'未命名訂單';
+  $('ordl').innerHTML=`<div class="bc" style="cursor:default" data-oid="${o.id}"><div class="g">
+   <div class="full"><label>訂單名稱（賣家）</label><input data-f="name" value="${esc(o.name)}"></div>
    <div><label>日期</label><input data-f="date" type="date" value="${esc(o.date)}"></div>
    <div><label>幣別</label><select data-f="cur">${CUR.map(c=>`<option${c===o.cur?' selected':''}>${c}</option>`).join('')}</select></div>
    <div><label>匯率</label><input data-f="rate" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.rate)}"></div>
    <div><label>共同運費（原幣）</label><input data-f="ls" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.ls)}"></div>
-   <div><label>分攤方式</label><select data-f="split"><option value="equal"${o.split!=='price'?' selected':''}>平均分</option><option value="price"${o.split==='price'?' selected':''}>依價格比例</option></select></div>
-   <div><label>集運總重量</label><input data-f="w" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.w)}"></div>
-   <div><label>重量單位</label><select data-f="wu">${['磅','公斤','克'].map(u=>`<option${(o.wu||'磅')===u?' selected':''}>${u}</option>`).join('')}</select></div>
-   <div><label>每磅集運費 NT$</label><input data-f="srate" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.srate||cfg.shipRate||180)}"></div>
-   <div><label>國際運費 NT$（留空自動算）</label><input data-f="intl" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.intl)}"></div></div>
-   <div class="osum meta" style="margin-top:8px">${orderSummary(o)}</div>
-   <div class="acts"><button data-od="${o.id}">刪除這張訂單</button></div></div>`).join('')||'<div class="empty">還沒有訂單</div>';
+   <div class="full"><label>運費分攤方式（共同運費、國際運費都適用）</label><select data-f="split"><option value="equal"${o.split!=='price'?' selected':''}>平均分</option><option value="price"${o.split==='price'?' selected':''}>依價格比例</option></select></div>
+   <div class="intl-only"><label>集運總重量</label><input data-f="w" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.w)}"></div>
+   <div class="intl-only"><label>重量單位</label><select data-f="wu">${['磅','公斤','克'].map(u=>`<option${(o.wu||'磅')===u?' selected':''}>${u}</option>`).join('')}</select></div>
+   <div class="intl-only"><label>每磅集運費 NT$</label><input data-f="srate" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.srate||cfg.shipRate||180)}"></div>
+   <div class="intl-only"><label>國際運費 NT$（留空自動算）</label><input data-f="intl" type="number" inputmode="decimal" step="any" min="0" value="${esc(o.intl)}"></div></div>
+   <div class="osum meta" style="margin-top:8px">${orderSummary(o)}</div></div>`;
 }
-$('bOrd').onclick=()=>{drawOrders();$('dOrd').showModal()};
-$('ordAdd').onclick=()=>{orders.push({id:uid(),name:'',date:todayS(),cur:'USD',rate:rates.USD||32,ls:'',split:'equal'});drawOrders()};
+$('bOrd').onclick=()=>{curOrd=null;ordQ='';$('ordQ').value='';ordShown=15;drawOrders();$('dOrd').showModal()};
+$('ordAdd').onclick=()=>{const o={id:uid(),name:'',date:todayS(),cur:cfg.intl?'USD':'TWD',rate:cfg.intl?(rates.USD||32):1,ls:'',split:'equal'};orders.push(o);curOrd=o.id;drawOrders();const f=$('ordl').querySelector('[data-f=name]');if(f)f.focus()};
+$('ordList').onclick=e=>{if(e.target.closest('#ordMore')){ordShown+=15;drawOrders();return}const c=e.target.closest('[data-ov]');if(c){curOrd=c.dataset.ov;drawOrders()}};
+$('ordTabs').onclick=e=>{const b=e.target.closest('button');if(b){ordTab=b.dataset.t;ordShown=15;drawOrders()}};
+$('ordQ').oninput=()=>{ordQ=$('ordQ').value;ordShown=15;drawOrders()};
 $('ordl').oninput=e=>{const r=e.target.closest('[data-oid]'),f=e.target.dataset.f;if(!r||!f)return;
   const o=orders.find(x=>x.id===r.dataset.oid);o[f]=e.target.value;
-  if(f==='cur'){o.rate=rates[o.cur]||1;drawOrders();return}
+  if(f==='cur'){o.rate=rates[o.cur]||1;drawOrdDetail();return}
+  if(f==='name')$('ordTitle').textContent=o.name||'未命名訂單';
   r.querySelector('.osum').innerHTML=orderSummary(o)};
 $('ordl').onclick=async e=>{
-  const d=e.target.closest('[data-od]');
-  if(d){if(await yes('刪除這張訂單？裡面的衣服會保留，但共同運費不再分攤。')){orders=orders.filter(x=>x.id!==d.dataset.od);items.forEach(i=>{if(i.order===d.dataset.od)i.order=''});drawOrders()}return}
+  const out=e.target.closest('[data-out]');
+  if(out){const i=items.find(x=>x.id===out.dataset.out);if(i){i.order='';await save();drawOrdDetail()}return}
   const it=e.target.closest('[data-edit]');if(it)openEdit(it.dataset.edit)};
+$('ordBack').onclick=async()=>{curOrd=null;await save();drawOrders();render()};
+$('ordDel').onclick=async()=>{if(await yes('刪除這張訂單？裡面的衣服會保留，但共同運費不再分攤。')){const id=curOrd;orders=orders.filter(x=>x.id!==id);items.forEach(i=>{if(i.order===id)i.order=''});curOrd=null;await save();drawOrders();render()}};
 $('ordOk').onclick=()=>$('dOrd').close();
-$('dOrd').addEventListener('close',()=>{save();render()});
-$('dlg').addEventListener('close',()=>{if($('dOrd').open)drawOrders()});
-/* merge order: link this item with another item right in the item form */
-let pend={x:'',orig:'',name:'',ls:''};
+$('dOrd').addEventListener('close',()=>{curOrd=null;save();render()});
+$('dlg').addEventListener('close',()=>{if($('dOrd').open&&curOrd)drawOrdDetail()});
+/* picker: add several items to the order at once */
+function pickItems(){const q=pickQ.trim().toLowerCase();return items.filter(i=>!i.order&&(!q||[i.name,i.brand,i.size].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''))}
+function drawPick(){
+  const l=pickItems();
+  $('pickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${pickSel.has(i.id)?'checked':''}><span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.bd].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">${i.bp?esc((i.cur||'')+' '+n(i.bp)):''}</span></label>`).join(''):'<div class="empty">沒有可加入的衣服</div>';
+  $('pickOk').textContent='加入 '+pickSel.size+' 件';
+}
+function openPicker(){pickSel.clear();pickQ='';$('pickQ').value='';const o=orders.find(x=>x.id===curOrd);$('pickTo').textContent='加入到：'+(o?(o.name||'未命名訂單'):'');drawPick();$('dPick').showModal()}
+$('ordAddItems').onclick=openPicker;
+$('pickList').onchange=e=>{const c=e.target.closest('[data-pk]');if(!c)return;if(c.checked)pickSel.add(c.dataset.pk);else pickSel.delete(c.dataset.pk);$('pickOk').textContent='加入 '+pickSel.size+' 件'};
+$('pickQ').oninput=()=>{pickQ=$('pickQ').value;drawPick()};
+$('pickAll').onclick=()=>{pickItems().forEach(i=>pickSel.add(i.id));drawPick()};
+$('pickNone').onclick=()=>{pickSel.clear();drawPick()};
+$('pickNo').onclick=()=>$('dPick').close();
+$('pickOk').onclick=async()=>{items.forEach(i=>{if(pickSel.has(i.id))i.order=curOrd});await save();$('dPick').close();drawOrdDetail();render()};
+/* item form: show which order this item belongs to (orders are managed from the home page) */
 function formOrder(bp0,r){
-  const v=$('f_order').value;if(!v)return null;const eid=editId||'__cur';
-  let list,rate;
-  if(v==='__new'){const x=items.find(i=>i.id===pend.x);if(!x)return null;list=[{id:x.id,v:n(x.bp)*(n(x.rate)||1)}];rate=r}
-  else{const o=orders.find(q=>q.id===v);if(!o)return null;list=items.filter(i=>i.order===v&&i.id!==eid).map(i=>({id:i.id,v:n(i.bp)*(n(i.rate)||1)}));rate=n(o.rate)||1}
-  list.push({id:eid,v:bp0});
-  const o={ls:$('f_ols').value,split:$('f_osplit').value,rate};
-  const ow=n($('f_ow').value)*(WF[$('f_owu').value]||1),oi=n($('f_ointl').value),intlTot=oi>0?oi:ow*(n($('f_osrate').value)||cfg.shipRate||180);
-  return {o,list,tot:n(o.ls)*rate,sum:list.reduce((a,x)=>a+x.v,0),intlTot};
+  const v=$('f_order').value;if(!v)return null;const eid=editId||'__cur',o=orders.find(q=>q.id===v);if(!o)return null;
+  const list=items.filter(i=>i.order===v&&i.id!==eid).map(i=>({id:i.id,v:n(i.bp)*(n(i.rate)||1)}));list.push({id:eid,v:bp0});
+  const rate=n(o.rate)||1;
+  return {o:{ls:o.ls,split:o.split,rate},list,tot:n(o.ls)*rate,sum:list.reduce((a,x)=>a+x.v,0),intlTot:orderIntlTotal(o)};
 }
-function loadMergeFields(){
-  const v=$('f_order').value;$('mergeFields').style.display=v?'':'none';
-  if(!v){$('mergeInfo').innerHTML='';return}
-  let o,mem;
-  if(v==='__new'){const x=items.find(i=>i.id===pend.x)||{};o={name:pend.name,ls:pend.ls,split:'equal'};mem=[x]}
-  else{o=orders.find(q=>q.id===v)||{};mem=items.filter(i=>i.order===v&&i.id!==editId)}
-  $('f_oname').value=o.name||'';$('f_ols').value=o.ls??'';$('f_osplit').value=o.split==='price'?'price':'equal';$('f_ow').value=o.w??'';$('f_owu').value=o.wu||'磅';$('f_osrate').value=o.srate||cfg.shipRate||180;$('f_ointl').value=o.intl??'';
-  $('mergeInfo').innerHTML='一起合併的衣服：'+mem.filter(Boolean).map(i=>esc(i.name)).join('、')+'，加上這一件。各件的賣出價分開填，合併盈虧可在首頁「🛒 訂單」查看。';
+function drawOrderNote(){
+  const o=orders.find(x=>x.id===$('f_order').value),box=$('mergeBox');
+  if(!o){box.style.display='none';return}
+  const cnt=items.filter(i=>i.order===o.id&&i.id!==editId).length+1;
+  box.style.display='';$('orderNote').innerHTML='🛒 這件屬於訂單「<b>'+esc(o.name||'未命名')+'</b>」（共 '+cnt+' 件）。共同運費和國際運費由訂單分攤，要調整或加入其他衣服，請到首頁「🛒 訂單」。';
 }
-function initMerge(it){
-  pend={x:'',orig:it.order||'',name:'',ls:''};
-  const cur=it.order?orders.find(o=>o.id===it.order):null;
-  const others=items.filter(i=>i.id!==editId&&!(cur&&i.order===cur.id)).sort((a,b)=>(b.created||'').localeCompare(a.created||''));
-  $('f_link').innerHTML='<option value="">不合併（單獨購買）</option>'
-    +(cur?`<option value="__keep">維持：訂單「${esc(cur.name||'未命名')}」</option>`:'')
-    +others.map(i=>{const o=i.order?orders.find(x=>x.id===i.order):null;return `<option value="item:${i.id}">與「${esc(i.name)}」合併${o?'（已在訂單「'+esc(o.name||'未命名')+'」）':''}</option>`}).join('');
-  $('f_link').value=cur?'__keep':'';
-  $('f_order').value=cur?cur.id:'';
-  loadMergeFields();
-}
-$('f_link').onchange=()=>{
-  const v=$('f_link').value;
-  if(v==='')$('f_order').value='';
-  else if(v==='__keep')$('f_order').value=pend.orig;
-  else{const x=items.find(i=>i.id===v.slice(5));
-    if(x&&x.order)$('f_order').value=x.order;
-    else if(x){pend.x=x.id;pend.name=x.name||'';pend.ls=x.ls||'';$('f_order').value='__new'}}
-  loadMergeFields();calc();
-};
-['f_oname','f_ols','f_osplit','f_ow','f_owu','f_osrate','f_ointl'].forEach(k=>{$(k).oninput=calc;$(k).onchange=calc});
+function initMerge(it){$('f_order').value=it.order&&orders.find(o=>o.id===it.order)?it.order:'';drawOrderNote()}
+$('orderOut').onclick=()=>{$('f_order').value='';drawOrderNote();calc()};
 
 /* photo cropper */
 const CROP={};
@@ -966,6 +992,30 @@ $('selApply').onclick=async()=>{
   items.forEach(i=>{if(sel.has(i.id))i.cat=val});
   await save();sel.clear();render();$('selCnt').textContent='已更新 '+k+' 件'+(val?'，放入「'+val+'」':'，改為未分類');
 };
+
+/* international shipping on/off + collection button placement */
+function applyUI(){
+  document.body.classList.toggle('nointl',!cfg.intl);
+  $('bShip').style.display=cfg.intl&&cfg.homeShip?'':'none';
+  $('intlBox').style.display=cfg.intl?'':'none';
+}
+const _applyTheme=applyTheme;
+applyTheme=function(){_applyTheme();applyUI()};
+$('cfgIntl').onchange=async()=>{cfg.intl=$('cfgIntl').checked;if(!cfg.intl&&filter==='未算運費')filter='全部';applyUI();await save();render()};
+$('cfgHomeShip').onchange=async()=>{cfg.homeShip=$('cfgHomeShip').checked;applyUI();await save()};
+$('cfgShipMgr').onclick=()=>{drawShips();$('dShip').showModal()};
+
+/* top-right close / save buttons, so long dialogs can be left without scrolling to the bottom */
+(function(){
+  const M={dlg:['cancel','save'],dOrd:['ordOk'],dPick:['pickNo'],dShip:['sOk'],dRate:['rOk'],dRep:['rClose'],dCrop:['cropNo']};
+  Object.entries(M).forEach(([id,[x,sv]])=>{
+    const d=$(id);if(!d||!$(x))return;
+    const h=document.createElement('div');h.className='dhead';
+    h.innerHTML=(sv?'<button class="p" type="button" data-hs>儲存</button>':'')+'<button class="dx" type="button" data-hx aria-label="關閉">✕</button>';
+    h.onclick=e=>{if(e.target.closest('[data-hx]'))$(x).click();else if(e.target.closest('[data-hs]'))$(sv).click()};
+    d.insertBefore(h,d.firstChild);
+  });
+})();
 
 /* init */
 (async()=>{
