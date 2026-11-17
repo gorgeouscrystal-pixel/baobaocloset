@@ -278,7 +278,7 @@ textarea{min-height:70px}
   <input id="sPickQ" type="search" placeholder="搜尋名稱、品牌、尺寸" style="margin:6px 0">
   <div class="bar" style="margin:0 0 6px"><button id="sPickAll">全選目前清單</button><button id="sPickNone">取消勾選</button></div>
   <div id="sPickList" style="max-height:44vh;overflow:auto"></div>
-  <div class="meta" style="margin-top:6px">已經賣出的、已在出售清單裡的衣服不會出現在這裡。</div>
+  <div class="meta" style="margin-top:6px">已經賣出、已填過賣出價，或已在出售清單裡的衣服不會出現在這裡。點照片可以放大。</div>
   <div class="acts"><button id="sPickNo">取消</button><button class="p" id="sPickOk">加入 0 件</button></div>
 </dialog>
 <dialog id="dAsk"><div id="askMsg" style="margin-bottom:10px;white-space:pre-wrap"></div><input id="askIn"><div class="acts"><button id="askNo">取消</button><button class="p" id="askOk">確定</button></div></dialog>
@@ -856,7 +856,7 @@ $('dlg').addEventListener('close',()=>{if($('dOrd').open&&curOrd)drawOrdDetail()
 function pickItems(){const q=pickQ.trim().toLowerCase();return items.filter(i=>!i.order&&(!q||[i.name,i.brand,i.size].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''))}
 function drawPick(){
   const l=pickItems();
-  $('pickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${pickSel.has(i.id)?'checked':''}><span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.bd].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">${i.bp?esc((i.cur||'')+' '+n(i.bp)):''}</span></label>`).join(''):'<div class="empty">沒有可加入的衣服</div>';
+  $('pickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${pickSel.has(i.id)?'checked':''}>${i.photo&&imgs[i.photo]?`<img class="th" data-big="${i.photo}" style="width:56px;height:56px;border-radius:8px" src="${imgs[i.photo]}" alt="">`:'<div class="th" style="width:56px;height:56px;font-size:1.4rem">👚</div>'}<span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.bd].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">${i.bp?esc((i.cur||'')+' '+n(i.bp)):''}</span></label>`).join(''):'<div class="empty">沒有可加入的衣服</div>';
   $('pickOk').textContent='加入 '+pickSel.size+' 件';
 }
 function openPicker(){pickSel.clear();pickQ='';$('pickQ').value='';const o=orders.find(x=>x.id===curOrd);$('pickTo').textContent='加入到：'+(o?(o.name||'未命名訂單'):'');drawPick();$('dPick').showModal()}
@@ -1031,8 +1031,8 @@ $('cfgShipMgr').onclick=()=>{drawShips();$('dShip').showModal()};
   Object.entries(M).forEach(([id,[x,sv]])=>{
     const d=$(id);if(!d||!$(x))return;
     const h=document.createElement('div');h.className='dhead';
-    h.innerHTML=(sv?'<button class="p" type="button" data-hs>儲存</button>':'')+'<button class="dx" type="button" data-hx aria-label="關閉">✕</button>';
-    h.onclick=e=>{if(e.target.closest('[data-hx]'))$(x).click();else if(e.target.closest('[data-hs]'))$(sv).click()};
+    h.innerHTML='<button type="button" data-hb style="margin-right:auto">← 返回</button>'+(sv?'<button class="p" type="button" data-hs>儲存</button>':'')+'<button class="dx" type="button" data-hx aria-label="關閉">✕</button>';
+    h.onclick=e=>{if(e.target.closest('[data-hb]')){if(id==='dOrd'&&curOrd)$('ordBack').click();else $(x).click()}else if(e.target.closest('[data-hx]'))$(x).click();else if(e.target.closest('[data-hs]'))$(sv).click()};
     d.insertBefore(h,d.firstChild);
   });
 })();
@@ -1083,7 +1083,7 @@ function drawSellSummary(){
 function sellRow(i){
   const done=sold(i);
   return `<div class="bc" data-sid="${i.id}" style="cursor:default${done?';border-color:var(--sell)':''}">
-    <div class="row" style="align-items:center"><span class="name">${done?'✅ ':''}${esc(i.name)}</span><button class="pen" data-sx="${i.id}" aria-label="移出出售清單">✕</button></div>
+    <div class="row" style="align-items:center"><span class="name" style="display:flex;align-items:center;gap:8px">${i.photo&&imgs[i.photo]?`<img class="th" data-big="${i.photo}" style="width:44px;height:44px;border-radius:8px" src="${imgs[i.photo]}" alt="">`:'<div class="th" style="width:44px;height:44px;font-size:1.4rem">👚</div>'}<span>${done?'✅ ':''}${esc(i.name)}</span></span><button class="pen" data-sx="${i.id}" aria-label="移出出售清單">✕</button></div>
     <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size)].filter(Boolean).map(esc).join('・')}　成本 <b class="buy">${money(costOf(i))}</b></div>
     <div class="g" style="margin-top:6px">
       <div><label>預計售價 NT$</label><input data-sf="ask" type="number" inputmode="decimal" min="0" step="any" value="${esc(i.ask)}"></div>
@@ -1134,18 +1134,20 @@ $('dSell').addEventListener('close',()=>{save();render()});
 /* picker: choose by wardrobe */
 function sElig(c,q){
   q=(q||'').trim().toLowerCase();
-  return items.filter(i=>!i.sell&&!sold(i)&&(c==='全部'||(c==='未分類'?!(i.cat&&cats.includes(i.cat)):i.cat===c))&&(!q||[i.name,i.brand,i.size].join(' ').toLowerCase().includes(q)))
+  return items.filter(i=>!i.sell&&!sold(i)&&!(n(i.sp)>0)&&(c==='全部'||(c==='未分類'?!(i.cat&&cats.includes(i.cat)):i.cat===c))&&(!q||[i.name,i.brand,i.size].join(' ').toLowerCase().includes(q)))
     .sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
 }
 function drawSPick(){
   $('sPickCats').innerHTML=['全部',...cats,'未分類'].map(c=>`<button class="${c===sPickCat?'on':''}" data-c="${esc(c)}">${esc(c)} ${sElig(c,'').length}</button>`).join('');
   const l=sElig(sPickCat,sPickQ);
-  $('sPickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${sPickSel.has(i.id)?'checked':''}><span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.cat].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">成本 ${money(costOf(i))}</span></label>`).join(''):'<div class="empty">這個衣櫃沒有可以加入的衣服</div>';
+  $('sPickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${sPickSel.has(i.id)?'checked':''}>${i.photo&&imgs[i.photo]?`<img class="th" data-big="${i.photo}" style="width:56px;height:56px;border-radius:8px" src="${imgs[i.photo]}" alt="">`:'<div class="th" style="width:56px;height:56px;font-size:1.4rem">👚</div>'}<span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.cat].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">成本 ${money(costOf(i))}</span></label>`).join(''):'<div class="empty">這個衣櫃沒有可以加入的衣服</div>';
   $('sPickOk').textContent='加入 '+sPickSel.size+' 件';
 }
 $('sellAdd').onclick=()=>{sPickSel.clear();sPickQ='';$('sPickQ').value='';sPickCat='全部';drawSPick();$('dSPick').showModal()};
 $('sPickCats').onclick=e=>{const b=e.target.closest('button');if(b){sPickCat=b.dataset.c;drawSPick()}};
 $('sPickQ').oninput=()=>{sPickQ=$('sPickQ').value;drawSPick()};
+$('sPickList').onclick=e=>{if(e.target.closest('[data-big]'))e.preventDefault()};
+$('pickList').onclick=e=>{if(e.target.closest('[data-big]'))e.preventDefault()};
 $('sPickList').onchange=e=>{const c=e.target.closest('[data-pk]');if(!c)return;if(c.checked)sPickSel.add(c.dataset.pk);else sPickSel.delete(c.dataset.pk);$('sPickOk').textContent='加入 '+sPickSel.size+' 件'};
 $('sPickAll').onclick=()=>{sElig(sPickCat,sPickQ).forEach(i=>sPickSel.add(i.id));drawSPick()};
 $('sPickNone').onclick=()=>{sPickSel.clear();drawSPick()};
