@@ -111,7 +111,7 @@ textarea{min-height:70px}
   <div class="stat"><small>淨支出（花費－實收）</small><b id="sNet"></b></div>
   <div class="stat"><small>其中運費（國際＋國內）</small><b class="buy" id="sShip"></b></div>
 </div>
-<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip" style="display:none">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
+<div class="bar"><div class="seg" id="seg"><button data-v="brand">品牌</button><button data-v="cat">衣櫃</button><button data-v="all">全部</button></div><button id="bShip" style="display:none">📦 集運單</button><button id="bOrd">🛒 訂單</button><button id="bSell">🏷 預計出售</button><button id="bRep">📊 報表</button><button id="bCfg">⚙️ 設定</button></div>
 <div id="brandView"></div>
 <div id="itemView"><div id="bhead"></div><div class="bar" style="margin-bottom:10px"><input id="q" type="search" placeholder="搜尋名稱、品牌、尺寸、備註" style="flex:1 1 150px;margin:0"><button id="selToggle">☑ 選取</button></div><div class="tabs" id="tabs"></div><div id="list"></div></div>
 
@@ -169,7 +169,8 @@ textarea{min-height:70px}
 </main>
 <div id="selBar">
   <div class="row" style="margin-bottom:8px;align-items:center"><b id="selCnt">已選 0 件</b><span style="display:flex;gap:6px"><button id="selAll">全選</button><button id="selNone">取消勾選</button></span></div>
-  <div class="bar" style="margin:0"><select id="selCat" style="flex:1 1 150px"></select><button class="p" id="selApply">套用到已選</button><button id="selExit">完成</button></div>
+  <div class="bar" style="margin:0"><select id="selCat" style="flex:1 1 150px"></select><button class="p" id="selApply">放入衣櫃</button><button id="selExit">完成</button></div>
+  <div class="bar" style="margin:8px 0 0"><select id="selBrand" style="flex:1 1 150px"></select><button class="p" id="selBrandApply">設定品牌</button></div>
 </div>
 <button class="p fab" id="add">＋ 新增衣服</button>
 
@@ -197,7 +198,7 @@ textarea{min-height:70px}
     <div class="intl-only"><label>重量（算國際運費用）</label><div style="display:flex;gap:6px"><input id="f_w" type="number" inputmode="decimal" step="any" min="0" placeholder="例：0.3"><select id="f_wu" style="width:88px"><option>磅</option><option>公斤</option><option>克</option></select></div></div>
     <div class="intl-only"><label>每磅集運費 NT$</label><input id="f_srate" type="number" inputmode="decimal" min="0" step="any"></div>
     <div class="intl-only"><label>國內運費 NT$（集運寄到家）</label><input id="f_dom" type="number" inputmode="decimal" min="0" step="any"></div>
-    <div class="full intl-only"><details style="padding:0;background:none"><summary style="color:var(--sub);font-size:.85rem">手動輸入國際運費（一般不用填）</summary><label style="margin-top:6px">國際運費 NT$（填了就不用重量計算）</label><input id="f_intl" type="number" inputmode="decimal" min="0" step="any"></details></div>
+    <div class="full intl-only"><details style="padding:0;background:none"><summary style="color:var(--sub);font-size:.85rem">手動輸入國際運費（一般不用填）</summary><label style="margin-top:6px">國際運費 NT$（只在沒填重量時使用）</label><input id="f_intl" type="number" inputmode="decimal" min="0" step="any"></details></div>
     <div class="full calc" id="calc"></div>
     <div class="full"><label>購買截圖</label><div class="imgs" id="shWrap"></div></div>
     <div class="full" id="aiRow" style="display:none"><button type="button" class="p" id="aiBtn">✨ 用截圖自動填入</button><div class="aimsg" id="aiMsg"></div></div>
@@ -262,6 +263,24 @@ textarea{min-height:70px}
   <div class="bar"><button id="cropRot">↻ 旋轉</button><button id="cropFull">整張（不裁切）</button></div>
   <div class="acts"><button id="cropNo">取消</button><button class="p" id="cropOk">完成</button></div>
 </dialog>
+<dialog id="dSell">
+  <div class="sec" style="margin-bottom:4px">🏷 預計出售</div>
+  <p class="meta" style="margin:0 0 6px">從各衣櫃挑出要賣的衣服，填預計售價；成交後填實際成交價，會直接寫回原本那件衣服的賣出紀錄，並算出盈虧。</p>
+  <div class="stat" id="sellSum" style="margin-bottom:8px"></div>
+  <div class="bar"><button class="p" id="sellAdd">＋ 從衣櫃挑衣服</button><button id="sellArc">結算封存本次</button></div>
+  <div id="sellList"></div>
+  <details style="margin-top:12px"><summary>過去結算</summary><div id="sellRounds" style="margin-top:8px"></div></details>
+  <div class="acts"><button class="p" id="sellOk">完成</button></div>
+</dialog>
+<dialog id="dSPick">
+  <div class="sec" style="margin-bottom:6px">從衣櫃挑要賣的衣服</div>
+  <div class="tabs" id="sPickCats"></div>
+  <input id="sPickQ" type="search" placeholder="搜尋名稱、品牌、尺寸" style="margin:6px 0">
+  <div class="bar" style="margin:0 0 6px"><button id="sPickAll">全選目前清單</button><button id="sPickNone">取消勾選</button></div>
+  <div id="sPickList" style="max-height:44vh;overflow:auto"></div>
+  <div class="meta" style="margin-top:6px">已經賣出的、已在出售清單裡的衣服不會出現在這裡。</div>
+  <div class="acts"><button id="sPickNo">取消</button><button class="p" id="sPickOk">加入 0 件</button></div>
+</dialog>
 <dialog id="dAsk"><div id="askMsg" style="margin-bottom:10px;white-space:pre-wrap"></div><input id="askIn"><div class="acts"><button id="askNo">取消</button><button class="p" id="askOk">確定</button></div></dialog>
 <dialog id="dRep">
   <div class="sec" style="margin-bottom:8px">買賣與花費報表</div>
@@ -276,13 +295,13 @@ const $=id=>document.getElementById(id);
 const CUR=['USD','TWD','JPY','KRW','CNY','HKD','EUR','GBP','AUD','CAD'];
 const DEF={TWD:1,USD:32,JPY:0.21,KRW:0.023,CNY:4.4,HKD:4.1,EUR:35,GBP:41,AUD:21,CAD:23};
 const STAT=['全部','已購入','待售','已售出','收藏中','未填價格','未算運費','未選衣櫃'];
-let items=[],ships=[],orders=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='brand',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
+let items=[],ships=[],orders=[],rates={...DEF},imgs={},filter='全部',editId=null,tmp=null,added=new Set(),view='cat',curBrand=null,aiSample=null,cats=['上衣','洋裝','褲子','裙子','外套','睡衣','配件'];
 /* storage: IndexedDB with in-memory fallback */
 const dbp=new Promise(r=>{try{const q=indexedDB.open('closet',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
 async function kvSet(k,v){const d=await dbp;if(!d)return;return new Promise(r=>{try{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
 async function kvDel(k){const d=await dbp;if(!d)return;try{d.transaction('kv','readwrite').objectStore('kv').delete(k)}catch(e){}}
 async function kvAll(){const d=await dbp;if(!d)return{};return new Promise(r=>{const o={};try{const c=d.transaction('kv').objectStore('kv').openCursor();c.onsuccess=()=>{const x=c.result;if(x){o[x.key]=x.value;x.continue()}else r(o)};c.onerror=()=>r(o)}catch(e){r(o)}})}
-const save=()=>kvSet('data',{items,ships,orders,rates,cats,hid,cfg,brandList});
+const save=()=>kvSet('data',{items,ships,orders,rates,cats,hid,cfg,brandList,sellRounds});
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const n=v=>Number(v)||0;
 const money=v=>'NT$'+Math.round(v).toLocaleString('zh-TW');
@@ -305,8 +324,8 @@ function shipParts(i){
   if(c){const sh=shareOf(c,wlb(i));return {intl:c.intl*sh,dom:c.dom*sh+n(i.dom),blb:c.billed*sh}}
   const oc2=i.order?orderCalc(i.order):null,ot=oc2?orderIntlTotal(oc2.o):0;
   if(ot>0)return {intl:ot*orderFrac(oc2,n(i.bp)*(n(i.rate)||1)),dom:n(i.dom),blb:0};
-  const sr=n(i.srate)||cfg.shipRate||180,m=n(i.intl);
-  return {intl:m>0?m:wlb(i)*sr,dom:n(i.dom),blb:wlb(i)};
+  const sr=n(i.srate)||cfg.shipRate||180,m=n(i.intl),lbs=wlb(i);
+  return {intl:lbs>0?lbs*sr:(m>0?m:0),dom:n(i.dom),blb:lbs};
 }
 const shipOf=i=>{const p=shipParts(i);return p.intl+p.dom};
 const directShip=i=>{const c=i.batch?shipCalc(i.batch):null;if(c)return n(i.dom);const p=shipParts(i);return p.intl+p.dom};
@@ -338,7 +357,7 @@ function drawGroups(){
   const head=view==='cat'?'<div class="bar"><button id="catAdd" class="p">＋ 新增衣櫃</button><button id="catBrand">依品牌自動建立</button></div><p class="meta" style="margin:0 0 10px">衣櫃名稱可以自己取，例如「夏天」「RR 專櫃」「洋裝」。想依品牌分，可按「依品牌自動建立」。</p>':'';
   $('brandView').innerHTML=head+(rows.length?rows.map(([b,a])=>{
     const cost=a.reduce((t,i)=>t+costOf(i),0),sl=a.filter(sold),pl=sl.reduce((t,i)=>t+plOf(i),0),c=k=>a.filter(i=>i.status===k).length;
-    return `<div class="bc" data-b="${esc(b)}" tabindex="0"><div class="row"><span class="name">${esc(b)}</span><b class="buy">${money(cost)}</b></div>
+    return `<div class="bc" data-b="${esc(b)}" tabindex="0"><div class="row"><span class="name">${esc(view==='brand'&&b==='未分類'?'未填品牌':b)}</span><b class="buy">${money(cost)}</b></div>
     <div class="row meta"><span>共 ${a.length} 件・已購入 ${c('已購入')}・待售 ${c('待售')}・已售出 ${sl.length}</span>${sl.length?`<span>盈虧 <b class="${cls(pl)}">${sgn(pl)}</b></span>`:''}</div>
     ${b!=='未分類'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="pen" data-ren="${esc(b)}">✏️ 改名</button>${view==='cat'?`<button class="pen" data-del="${esc(b)}">🗑 刪除衣櫃</button>`:''}</div>`:''}</div>`}).join(''):'<div class="empty">還沒有紀錄，點右下角「新增衣服」開始吧</div>');
 }
@@ -349,7 +368,7 @@ function render(){bkStatus();
   $('sPL').textContent=sgn(pl);$('sPL').className=cls(pl);$('sNet').textContent=sgn(goods+ship-sell).replace('+','');
   $('seg').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
   const bv=view!=='all'&&!curBrand;if(bv&&selMode){selMode=false;sel.clear();$('selBar').style.display='none';$('add').style.display='';$('selToggle').textContent='☑ 選取'}$('brandView').style.display=bv?'':'none';$('itemView').style.display=bv?'none':'';
-  $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(curBrand)}</b></div>`:'';
+  $('bhead').innerHTML=curBrand?`<div class="row" style="margin-bottom:10px;align-items:center"><button id="bBack">← ${view==='cat'?'衣櫃':'品牌'}</button><b>${esc(view==='brand'&&curBrand==='未分類'?'未填品牌':curBrand)}</b></div>`:'';
   if(bv)drawGroups();
   const pool=curBrand?items.filter(i=>gkey(i)===curBrand):items;
   $('tabs').innerHTML=STAT.filter(t=>cfg.intl||t!=='未算運費').map(s=>`<button class="${s===filter?'on':''}" data-t="${s}">${s==='未填價格'||s==='未算運費'||s==='未選衣櫃'?'⚠ ':''}${s} ${pool.filter(i=>tabMatch(i,s)).length}</button>`).join('');
@@ -391,7 +410,7 @@ function formCalc(){
   let intl=0,dom=0,blb=0,viaOrder=false;
   if(c){const sh=shareOf(c,lb);intl=c.intl*sh;dom=c.dom*sh+dom0;blb=c.billed*sh}
   else if(oc&&oc.intlTot>0){intl=oc.intlTot*orderFrac(oc,bp0);dom=dom0;viaOrder=true}
-  else{intl=manual>0?manual:lb*sr;dom=dom0;blb=lb}
+  else{intl=lb>0?lb*sr:(manual>0?manual:0);dom=dom0;blb=lb}
   return {r,g,lb,c,sr,manual,intl,dom,blb,oc,osh,viaOrder,cost:g+osh+intl+dom};
 }
 function calc2(){
@@ -409,7 +428,7 @@ function calc(){
   if(f.oc)h+=f.oc.tot>0?`<br>同訂單共同運費分攤 <b>${money(f.osh)}</b>`:'<br><span class="meta">這張訂單還沒填共同運費，請到「🛒 訂單」填寫</span>';
   if(f.c){h+=`<br>集運單：這件 <b>${+f.lb.toFixed(2)} 磅</b>，分攤計費約 <b>${+f.blb.toFixed(2)} 磅</b><br>國際運費 <b>${money(f.intl)}</b>＋國內運費 <b>${money(f.dom)}</b>`;
     if(f.lb<=0)h+='<br><span class="meta">這件沒填重量，目前依平均分攤</span>'}
-  else if(f.intl>0||f.dom>0)h+=`<br>國際運費 <b>${money(f.intl)}</b>${f.viaOrder?'（整筆訂單的集運費，依分攤方式分給每件）':f.manual>0?'（手動填寫）':`（${+f.lb.toFixed(2)} 磅 × NT$${f.sr}）`}＋國內運費 <b>${money(f.dom)}</b>`;
+  else if(f.intl>0||f.dom>0)h+=`<br>國際運費 <b>${money(f.intl)}</b>${f.viaOrder?'（整筆訂單的集運費，依分攤方式分給每件）':(f.lb<=0&&f.manual>0)?'（手動填寫）':`（${+f.lb.toFixed(2)} 磅 × NT$${f.sr}）`}＋國內運費 <b>${money(f.dom)}</b>`;
   else if(cfg.intl)h+='<br><span class="meta">還沒算運費：填「重量」就會自動算國際運費</span>';
   h+=`<br>總成本 <b class="buy">${money(f.cost)}</b>`;
   $('calc').innerHTML=h;calc2();
@@ -458,7 +477,7 @@ $('brandView').onclick=async e=>{
   const d=e.target.closest('[data-del]');
   if(d){const old=d.dataset.del;if(await yes('刪除衣櫃「'+old+'」？裡面的衣服不會被刪除，會變成未分類。')){cats=cats.filter(c=>c!==old);items.forEach(i=>{if(i.cat===old)i.cat=''});await save();render()}return}
   const c=e.target.closest('[data-b]');if(c){curBrand=c.dataset.b;filter='全部';render()}};
-$('seg').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;curBrand=null;render()}};
+$('seg').onclick=e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;curBrand=null;cfg.view=view;save();render()}};
 $('bhead').onclick=e=>{if(e.target.closest('#bBack')){curBrand=null;render()}};
 document.addEventListener('input',e=>{e.target.classList&&e.target.classList.remove('ai')});
 function toBlob(d){const p=d.split(','),m=/:(.*?);/.exec(p[0])[1],b=atob(p[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:m})}
@@ -654,7 +673,7 @@ function bkStatus(){
 $('fullBk').onclick=async()=>{
   const b=$('fullBk');b.disabled=true;$('bkMsg').textContent='正在整理備份…';
   const used={};items.forEach(i=>{[i.photo,...(i.shots||[])].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]})});[cfg.avatar,cfg.bgImg].forEach(id=>{if(id&&imgs[id])used[id]=imgs[id]});
-  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,orders,rates,cats,hid,cfg,brandList,imgs:used});
+  const data=JSON.stringify({app:'kids-closet',v:2,exported:new Date().toISOString(),items,ships,orders,rates,cats,hid,cfg,brandList,sellRounds,imgs:used});
   const ok=await saveFile('衣櫥帳本備份_'+todayS()+'.json',new Blob([data],{type:'application/json'}),'bkMsg');
   if(ok){lastBk=new Date().toISOString();await kvSet('meta',{lastBackup:lastBk});bkStatus();$('bkMsg').textContent='已匯出完整備份（'+(data.length/1048576).toFixed(1)+' MB）。請把檔案存到 iCloud、Google Drive，或傳給自己保存。'}
   b.disabled=false;
@@ -673,6 +692,7 @@ $('fullIn').onchange=async e=>{
       if(d.hid)for(const k in d.hid)hid[k]=[...new Set([...(hid[k]||[]),...d.hid[k]])];
       if(d.cfg)cfg={...cfg,...d.cfg};
       if(Array.isArray(d.brandList))d.brandList.forEach(b=>{if(!brandList.includes(b))brandList.push(b)});
+      if(Array.isArray(d.sellRounds)){const ids=new Set(sellRounds.map(x=>x.id));d.sellRounds.forEach(x=>{if(!ids.has(x.id))sellRounds.push(x)})}
       (d.orders||[]).forEach(x=>{const e=orders.find(q=>q.id===x.id);if(e)Object.assign(e,x);else orders.push(x)});
       for(const id in (d.imgs||{})){imgs[id]=d.imgs[id];await kvSet('img:'+id,d.imgs[id])}
     }
@@ -966,7 +986,7 @@ function drawSelBar(){$('selCnt').textContent='已選 '+sel.size+' 件'}
 function fillSelCat(v){$('selCat').innerHTML='<option value="">選擇要放入的衣櫃…</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__none">改為未分類</option><option value="__new">＋ 新增衣櫃…</option>';$('selCat').value=v||''}
 function setSelMode(on){
   selMode=on;sel.clear();$('selBar').style.display=on?'block':'none';$('add').style.display=on?'none':'';
-  $('selToggle').textContent=on?'完成選取':'☑ 選取';if(on)fillSelCat();drawSelBar();render();
+  $('selToggle').textContent=on?'完成選取':'☑ 選取';if(on){fillSelCat();fillSelBrand()}drawSelBar();render();
 }
 function toggleSel(id){
   if(sel.has(id))sel.delete(id);else sel.add(id);
@@ -1007,7 +1027,7 @@ $('cfgShipMgr').onclick=()=>{drawShips();$('dShip').showModal()};
 
 /* top-right close / save buttons, so long dialogs can be left without scrolling to the bottom */
 (function(){
-  const M={dlg:['cancel','save'],dOrd:['ordOk'],dPick:['pickNo'],dShip:['sOk'],dRate:['rOk'],dRep:['rClose'],dCrop:['cropNo']};
+  const M={dlg:['cancel','save'],dOrd:['ordOk'],dPick:['pickNo'],dShip:['sOk'],dRate:['rOk'],dRep:['rClose'],dCrop:['cropNo'],dSell:['sellOk'],dSPick:['sPickNo']};
   Object.entries(M).forEach(([id,[x,sv]])=>{
     const d=$(id);if(!d||!$(x))return;
     const h=document.createElement('div');h.className='dhead';
@@ -1017,14 +1037,133 @@ $('cfgShipMgr').onclick=()=>{drawShips();$('dShip').showModal()};
   });
 })();
 
+/* bulk: set brand for the selected items */
+function fillSelBrand(v){
+  const bs=[...new Set([...brandList,...items.map(i=>(i.brand||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+  $('selBrand').innerHTML='<option value="">選擇品牌…</option>'+bs.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')+'<option value="__none">清除品牌</option><option value="__new">＋ 新增品牌…</option>';
+  $('selBrand').value=v||'';
+}
+$('selBrand').onchange=async()=>{
+  if($('selBrand').value!=='__new')return;
+  const nm=((await ask('新品牌名稱（例：RR）',''))||'').trim();
+  if(nm&&!brandList.includes(nm)){brandList.push(nm);await save()}
+  fillSelBrand(nm);
+};
+$('selBrandApply').onclick=async()=>{
+  const v=$('selBrand').value;
+  if(!sel.size){await say('請先勾選衣服。');return}
+  if(!v||v==='__new'){await say('請先選擇品牌。');return}
+  const val=v==='__none'?'':v,k=sel.size;
+  items.forEach(i=>{if(sel.has(i.id))i.brand=val});
+  await save();sel.clear();render();fillSelBrand();
+  $('selCnt').textContent='已更新 '+k+' 件'+(val?'，品牌「'+val+'」':'，已清除品牌');
+};
+
+/* selling area: pick clothes from wardrobes, enter expected / actual price, settle profit */
+let sellRounds=[],sPickCat='全部',sPickQ='',sPickSel=new Set();
+function sellStats(){
+  const l=items.filter(i=>i.sell),sl=l.filter(sold),un=l.filter(i=>!sold(i));
+  return {l,sl,un,rev:sl.reduce((a,i)=>a+n(i.sp)-n(i.sf),0),pl:sl.reduce((a,i)=>a+plOf(i),0),
+    askUn:un.reduce((a,i)=>a+n(i.ask),0),estUn:un.reduce((a,i)=>a+(n(i.ask)>0?n(i.ask)-n(i.sf)-costOf(i):0),0)};
+}
+function plText(i){
+  const c=costOf(i);
+  if(n(i.sp)>0){const p=n(i.sp)-n(i.sf)-c;return '實際盈虧 <b class="'+cls(p)+'">'+sgn(p)+'</b>'}
+  if(n(i.ask)>0){const p=n(i.ask)-n(i.sf)-c;return '預計盈虧 <b class="'+cls(p)+'">'+sgn(p)+'</b>（還沒成交）'}
+  return '填預計售價就能看預估盈虧';
+}
+function drawSellSummary(){
+  const t=sellStats();
+  $('sellSum').innerHTML=t.l.length?
+    '<small>這次清單</small><div>共 '+t.l.length+' 件・已成交 <b>'+t.sl.length+'</b> 件</div>'
+    +'<div>成交實收 <b class="sell">'+money(t.rev)+'</b>　本次盈虧 <b class="'+cls(t.pl)+'">'+sgn(t.pl)+'</b></div>'
+    +'<div class="meta">還沒成交 '+t.un.length+' 件・預計售價合計 '+money(t.askUn)+'・照預計售價賣出的話，預估再賺 '+sgn(t.estUn)+'</div>'
+    :'<div class="meta">清單還是空的，按「＋ 從衣櫃挑衣服」開始。</div>';
+}
+function sellRow(i){
+  const done=sold(i);
+  return `<div class="bc" data-sid="${i.id}" style="cursor:default${done?';border-color:var(--sell)':''}">
+    <div class="row" style="align-items:center"><span class="name">${done?'✅ ':''}${esc(i.name)}</span><button class="pen" data-sx="${i.id}" aria-label="移出出售清單">✕</button></div>
+    <div class="meta">${[i.brand,i.cat,i.size&&('尺寸 '+i.size)].filter(Boolean).map(esc).join('・')}　成本 <b class="buy">${money(costOf(i))}</b></div>
+    <div class="g" style="margin-top:6px">
+      <div><label>預計售價 NT$</label><input data-sf="ask" type="number" inputmode="decimal" min="0" step="any" value="${esc(i.ask)}"></div>
+      <div><label>實際成交價 NT$</label><input data-sf="sp" type="number" inputmode="decimal" min="0" step="any" value="${esc(i.sp)}"></div>
+      <div><label>手續費／運費 NT$</label><input data-sf="sf" type="number" inputmode="decimal" min="0" step="any" value="${esc(i.sf)}"></div>
+      <div><label>賣出日期</label><input data-sf="sd" type="date" value="${esc(i.sd)}"></div>
+    </div>
+    <div class="meta rowpl" style="margin-top:6px">${plText(i)}</div></div>`;
+}
+function drawSell(){
+  drawSellSummary();
+  const un=items.filter(i=>i.sell&&!sold(i)).sort((a,b)=>String(a.name).localeCompare(String(b.name))),sl=items.filter(i=>i.sell&&sold(i)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  $('sellList').innerHTML=(un.length?'<div class="meta" style="margin:10px 0 4px"><b>待成交（'+un.length+'）</b></div>'+un.map(sellRow).join(''):'')
+    +(sl.length?'<div class="meta" style="margin:10px 0 4px"><b>已成交（'+sl.length+'）</b></div>'+sl.map(sellRow).join(''):'');
+  $('sellRounds').innerHTML=sellRounds.length?sellRounds.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(r=>`<div class="bc" style="cursor:default"><div class="row"><span>${esc(r.date)}・${r.n} 件</span><span>實收 ${money(r.rev)}　盈虧 <b class="${cls(r.pl)}">${sgn(r.pl)}</b></span></div><div class="meta">${esc(r.names||'')}</div><button class="pen" data-rx="${r.id}" style="margin-top:6px">🗑 刪除這筆結算紀錄</button></div>`).join(''):'<div class="meta">還沒有封存過。</div>';
+}
+$('bSell').onclick=()=>{drawSell();$('dSell').showModal()};
+$('sellList').oninput=e=>{
+  const r=e.target.closest('[data-sid]'),f=e.target.dataset.sf;if(!r||!f)return;
+  const i=items.find(x=>x.id===r.dataset.sid);if(!i)return;
+  i[f]=e.target.value;
+  if(f==='sp'){
+    if(n(i.sp)>0){i.status='已售出';if(!i.sd)i.sd=todayS()}
+    else if(i.status==='已售出')i.status='待售';
+  }
+  r.querySelector('.rowpl').innerHTML=plText(i);drawSellSummary();
+};
+$('sellList').onchange=async()=>{await save();drawSell();render()};
+$('sellList').onclick=async e=>{
+  const x=e.target.closest('[data-sx]');if(!x)return;
+  const i=items.find(q=>q.id===x.dataset.sx);if(!i)return;
+  i.sell=false;if(!sold(i)&&i.status==='待售')i.status='已購入';
+  await save();drawSell();render();
+};
+$('sellArc').onclick=async()=>{
+  const t=sellStats();
+  if(!t.sl.length){await say('還沒有已成交的衣服可以結算。成交後在「實際成交價」填入價格就會算成已成交。');return}
+  if(!await yes('結算封存：把已成交的 '+t.sl.length+' 件（實收 '+money(t.rev)+'，盈虧 '+sgn(t.pl)+'）記進「過去結算」，並從清單移除？衣服各自的賣出紀錄會保留。'))return;
+  sellRounds.push({id:uid(),date:todayS(),n:t.sl.length,rev:Math.round(t.rev),pl:Math.round(t.pl),names:t.sl.map(i=>i.name).join('、')});
+  t.sl.forEach(i=>{i.sell=false});
+  await save();drawSell();render();
+};
+$('sellRounds').onclick=async e=>{
+  const d=e.target.closest('[data-rx]');if(!d)return;
+  if(await yes('刪除這筆結算紀錄？衣服的賣出紀錄不受影響。')){sellRounds=sellRounds.filter(x=>x.id!==d.dataset.rx);await save();drawSell()}
+};
+$('dSell').addEventListener('close',()=>{save();render()});
+/* picker: choose by wardrobe */
+function sElig(c,q){
+  q=(q||'').trim().toLowerCase();
+  return items.filter(i=>!i.sell&&!sold(i)&&(c==='全部'||(c==='未分類'?!(i.cat&&cats.includes(i.cat)):i.cat===c))&&(!q||[i.name,i.brand,i.size].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>(b.bd||b.created||'').localeCompare(a.bd||a.created||''));
+}
+function drawSPick(){
+  $('sPickCats').innerHTML=['全部',...cats,'未分類'].map(c=>`<button class="${c===sPickCat?'on':''}" data-c="${esc(c)}">${esc(c)} ${sElig(c,'').length}</button>`).join('');
+  const l=sElig(sPickCat,sPickQ);
+  $('sPickList').innerHTML=l.length?l.map(i=>`<label style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);color:var(--ink);font-size:.95rem"><input type="checkbox" class="selbox" data-pk="${i.id}" ${sPickSel.has(i.id)?'checked':''}><span style="flex:1;min-width:0">${esc(i.name)}<br><span class="meta">${[i.brand,i.size,i.cat].filter(Boolean).map(esc).join('・')}</span></span><span class="meta">成本 ${money(costOf(i))}</span></label>`).join(''):'<div class="empty">這個衣櫃沒有可以加入的衣服</div>';
+  $('sPickOk').textContent='加入 '+sPickSel.size+' 件';
+}
+$('sellAdd').onclick=()=>{sPickSel.clear();sPickQ='';$('sPickQ').value='';sPickCat='全部';drawSPick();$('dSPick').showModal()};
+$('sPickCats').onclick=e=>{const b=e.target.closest('button');if(b){sPickCat=b.dataset.c;drawSPick()}};
+$('sPickQ').oninput=()=>{sPickQ=$('sPickQ').value;drawSPick()};
+$('sPickList').onchange=e=>{const c=e.target.closest('[data-pk]');if(!c)return;if(c.checked)sPickSel.add(c.dataset.pk);else sPickSel.delete(c.dataset.pk);$('sPickOk').textContent='加入 '+sPickSel.size+' 件'};
+$('sPickAll').onclick=()=>{sElig(sPickCat,sPickQ).forEach(i=>sPickSel.add(i.id));drawSPick()};
+$('sPickNone').onclick=()=>{sPickSel.clear();drawSPick()};
+$('sPickNo').onclick=()=>$('dSPick').close();
+$('sPickOk').onclick=async()=>{
+  items.forEach(i=>{if(sPickSel.has(i.id)){i.sell=true;if(i.status==='已購入')i.status='待售'}});
+  await save();$('dSPick').close();drawSell();render();
+};
+
 /* init */
 (async()=>{
   const all=await kvAll();
   if(all.meta&&all.meta.lastBackup)lastBk=all.meta.lastBackup;
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);if(Array.isArray(all.data.orders))orders=all.data.orders;rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg};if(Array.isArray(all.data.brandList))brandList=all.data.brandList}
+  if(all.data){items=all.data.items||[];ships=migShips(all.data.ships||[]);if(Array.isArray(all.data.orders))orders=all.data.orders;rates={...DEF,...(all.data.rates||{})};if(Array.isArray(all.data.cats))cats=all.data.cats;if(all.data.hid)hid={...hid,...all.data.hid};if(all.data.cfg)cfg={...cfg,...all.data.cfg};if(Array.isArray(all.data.brandList))brandList=all.data.brandList;if(Array.isArray(all.data.sellRounds))sellRounds=all.data.sellRounds}
   else{try{const r=localStorage.getItem('kids-closet-v1');if(r){items=JSON.parse(r).map(i=>({...i,cur:'TWD',rate:1,shots:[]}));await save()}}catch(e){}}
   for(const k in all)if(k.startsWith('img:'))imgs[k.slice(4)]=all[k];
+  if(['brand','cat','all'].includes(cfg.view))view=cfg.view;
   applyTheme();render();
 })();
 </script>
